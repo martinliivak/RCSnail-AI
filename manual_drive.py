@@ -6,7 +6,7 @@ import asyncio
 import os
 from getpass import getpass
 from RCSnailPy.rcsnail import RCSnail, RCSLiveSession
-from src.lib.pygame_utils import Car, PygameRenderer
+from src.utilities.pygame_utils import Car, PygameRenderer
 import time
 import pygame
 from av import VideoFrame

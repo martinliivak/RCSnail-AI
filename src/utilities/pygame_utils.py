@@ -11,14 +11,6 @@ import pygame
 from av import VideoFrame
 import logging
 
-window_width = 960
-window_height = 480
-black = (0, 0, 0)
-red = (255, 0, 0)
-green = (0, 255, 0)
-blue = (0, 0, 255)
-latest_frame = None
-
 class Car:
     def __init__(self):
         # units in percentage range 0..1 
@@ -45,6 +37,12 @@ class Car:
         self.right_down = False
         self.up_down = False
         self.down_down = False
+
+        self.window_width = 960
+        self.window_height = 480
+        self.red = (255, 0, 0)
+        self.green = (0, 255, 0)
+        self.blue = (0, 0, 255)
 
     def update(self, dt):
         # calculate steering
@@ -101,56 +99,56 @@ class Car:
     def draw(self, screen):
         # Steering gauge:
         if self.steering < 0:
-            R = pygame.Rect((self.steering + 1.0) / 2.0 * window_width, 
-                window_height - 10, 
-                -self.steering * window_width / 2, 
+            R = pygame.Rect((self.steering + 1.0) / 2.0 * self.window_width, 
+                self.window_height - 10, 
+                -self.steering * self.window_width / 2, 
                 10)
         else:
-            R = pygame.Rect(window_width / 2, 
-                window_height - 10, 
-                self.steering * window_width / 2, 
+            R = pygame.Rect(self.window_width / 2, 
+                self.window_height - 10, 
+                self.steering * self.window_width / 2, 
                 10)
-        pygame.draw.rect(screen, green, R)
+        pygame.draw.rect(screen, self.green, R)
 
         # Acceleration/braking gauge:
         if self.gear == 1:
             if self.throttle > 0.0:
-                R = pygame.Rect(window_width - 20, 
+                R = pygame.Rect(self.window_width - 20, 
                     0,
                     10,
-                    window_height / 2 * self.throttle / self.max_acceleration)
-                R = R.move(0, window_height / 2 - R.height)
-                pygame.draw.rect(screen, green, R)
+                    self.window_height / 2 * self.throttle / self.max_acceleration)
+                R = R.move(0, self.window_height / 2 - R.height)
+                pygame.draw.rect(screen, self.green, R)
             if self.braking > 0.0:
-                R = pygame.Rect(window_width - 20, 
-                    window_height / 2,
+                R = pygame.Rect(self.window_width - 20, 
+                    self.window_height / 2,
                     10,
-                    window_height / 2 * self.braking / self.max_braking)
-                pygame.draw.rect(screen, red, R)
+                    self.window_height / 2 * self.braking / self.max_braking)
+                pygame.draw.rect(screen, self.red, R)
         elif self.gear == -1:
             if self.throttle > 0.0:
-                R = pygame.Rect(window_width - 20, 
-                    window_height / 2,
+                R = pygame.Rect(self.window_width - 20, 
+                    self.window_height / 2,
                     10,
-                    window_height / 2 * self.throttle / self.max_acceleration)
-                pygame.draw.rect(screen, green, R)
+                    self.window_height / 2 * self.throttle / self.max_acceleration)
+                pygame.draw.rect(screen, self.green, R)
             if self.braking > 0.0:
-                R = pygame.Rect(window_width - 20, 
+                R = pygame.Rect(self.window_width - 20, 
                     0,
                     10,
-                    window_height / 2 * self.braking / self.max_braking)
-                R = R.move(0, window_height / 2 - R.height)
-                pygame.draw.rect(screen, red, R)
+                    self.window_height / 2 * self.braking / self.max_braking)
+                R = R.move(0, self.window_height / 2 - R.height)
+                pygame.draw.rect(screen, self.red, R)
         
         # Speed gauge:
         if self.virtual_speed > 0.0:
-            R = pygame.Rect(window_width - 10,
+            R = pygame.Rect(self.window_width - 10,
                 0,
                 10,
-                window_height * self.virtual_speed / self.max_virtual_speed)
+                self.window_height * self.virtual_speed / self.max_virtual_speed)
             if self.gear >= 0:
-                R = R.move(0, window_height - R.height)
-            pygame.draw.rect(screen, green, R)
+                R = R.move(0, self.window_height - R.height)
+            pygame.draw.rect(screen, self.green, R)
 
 
 class PygameRenderer:
@@ -158,7 +156,8 @@ class PygameRenderer:
         self.window_width = 960
         self.window_height = 480
         self.FPS = 30
-
+        self.black = (0, 0, 0)
+        
         self.latest_frame = None
 
     def pygame_event_loop(self, loop, event_queue):
@@ -193,10 +192,10 @@ class PygameRenderer:
         while True:
             pygame.event.pump()
             last_time, current_time = current_time, time.time()
-            await asyncio.sleep(1 / FPS - (current_time - last_time))  # tick
+            await asyncio.sleep(1 / self.FPS - (current_time - last_time))  # tick
             car.update((current_time - last_time) / 1.0)
             await rcs.updateControl(car.gear, car.steering, car.throttle, car.braking)
-            screen.fill(black)
+            screen.fill(self.black)
             if isinstance(self.latest_frame, VideoFrame):
                 if frame_size[0] != self.latest_frame.width or frame_size[1] != self.latest_frame.height:
                     frame_size = (self.latest_frame.width, self.latest_frame.height)
