@@ -1,0 +1,2 @@
+07.04.19	Get a working initial connectivity script on repository. Resolve library import issue.
+		Validate what the new scope should be.
