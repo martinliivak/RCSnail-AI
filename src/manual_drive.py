@@ -1,15 +1,9 @@
-import sys
-sys.path.append("..")
-#pylint: disable=import-error
-
 import asyncio
 import os
 from getpass import getpass
-from RCSnailPy.rcsnail import RCSnail, RCSLiveSession
+from rcsnail import RCSnail, RCSLiveSession
 from src.utilities.pygame_utils import Car, PygameRenderer
-import time
 import pygame
-from av import VideoFrame
 import logging
 
 window_width = 960
@@ -17,7 +11,7 @@ window_height = 480
 
 def main():
     print('RCSnail manual drive demo')
-    logging.basicConfig(level = logging.WARNING, format='%(asctime)s %(message)s')
+    logging.basicConfig(level=logging.WARNING, format='%(asctime)s %(message)s')
     username = os.getenv('RCS_USERNAME', '')
     password = os.getenv('RCS_PASSWORD', '')
     if username == '':
@@ -29,7 +23,6 @@ def main():
 
     loop = asyncio.get_event_loop()
     pygame_event_queue = asyncio.Queue()
-
     pygame.init()
 
     pygame.display.set_caption("RCSnail API manual drive demo")
@@ -56,3 +49,13 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+async def get_stuff(event_queue):
+    while True:
+        event = await event_queue.get()
+        if event.type == pygame.QUIT:
+            print("event", event)
+            break
+        else:
+            print("event", event)
+    asyncio.get_event_loop().stop()

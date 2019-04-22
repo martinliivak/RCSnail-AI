@@ -1,3 +1,3 @@
 07.04.19	Get a working initial connectivity script on repository. Resolve library import issue. Reassess the scope.
 
-12.04.19	Reassess the new scope and discuss. Set up a general framework for learning.
+12.04.19	Reassess the new scope and discuss. Set up a general expandable framework for machine learning.

@@ -1,15 +1,9 @@
-import sys
-sys.path.append("..")
 #pylint: disable=import-error
 
 import asyncio
-import os
-from getpass import getpass
-from RCSnailPy.rcsnail import RCSnail, RCSLiveSession
 import time
 import pygame
 from av import VideoFrame
-import logging
 
 class Car:
     def __init__(self):
@@ -94,7 +88,6 @@ class Car:
         # conditions to change the direction
         if not self.up_down and not self.down_down and self.virtual_speed < 0.01:
             self.gear = 0
-
 
     def draw(self, screen):
         # Steering gauge:
