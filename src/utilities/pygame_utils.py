@@ -1,9 +1,8 @@
-#pylint: disable=import-error
-
 import asyncio
 import time
 import pygame
 from av import VideoFrame
+
 
 class Car:
     def __init__(self):
@@ -150,7 +149,6 @@ class PygameRenderer:
         self.window_height = 480
         self.FPS = 30
         self.black = (0, 0, 0)
-        
         self.latest_frame = None
 
     def pygame_event_loop(self, loop, event_queue):
@@ -211,6 +209,4 @@ class PygameRenderer:
         asyncio.get_event_loop().stop()
 
     def handle_new_frame(self, frame):
-        #if isinstance(latest_frame, VideoFrame):
-        #    VideoFrame(latest_frame).
         self.latest_frame = frame
