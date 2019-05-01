@@ -13,13 +13,20 @@ class Util:
     def __init__(self, renderer):
         self.renderer = renderer
         self.frame = None
+        self.telemetry = None
+
+    def get_current_state(self):
+        return self.frame, self.telemetry
 
     def intercept_frame(self, frame):
-        print("yo")
-        print(frame)
         self.renderer.handle_new_frame(frame)
-        self.frame = frame
+        self.frame = frame.to_ndarray()
+        #print(self.frame.shape)
+        #print(self.frame)
 
+    def intercept_telemetry(self, telemetry):
+        self.telemetry = telemetry
+        print(self.telemetry)
 
 def main():
     print('RCSnail manual drive demo')
@@ -44,8 +51,7 @@ def main():
     pygame_task = loop.run_in_executor(None, renderer.pygame_event_loop, loop, pygame_event_queue)
     render_task = asyncio.ensure_future(renderer.render(screen, car, rcs))
     event_task = asyncio.ensure_future(renderer.handle_pygame_events(pygame_event_queue, car))
-    #queue_task = asyncio.ensure_future(rcs.enqueue(loop, renderer.handle_new_frame))
-    queue_task = asyncio.ensure_future(rcs.enqueue(loop, util.intercept_frame))
+    queue_task = asyncio.ensure_future(rcs.enqueue(loop, util.intercept_frame, util.intercept_telemetry))
     try:
         loop.run_forever()
     except KeyboardInterrupt:
