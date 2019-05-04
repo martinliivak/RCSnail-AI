@@ -2,7 +2,6 @@ import os
 import asyncio
 import pygame
 import logging
-
 from rcsnail import RCSnail
 from src.utilities.pygame_utils import Car, PygameRenderer
 from src.utilities.pipeline_utils import Util
@@ -27,13 +26,14 @@ def main():
     pygame.display.set_caption("RCSnail API manual drive demo")
     screen = pygame.display.set_mode((window_width, window_height))
 
+    util = Util()
     car = Car()
     renderer = PygameRenderer(screen, car)
-    util = Util(renderer)
+    util.set_renderer(renderer)
 
     pygame_task = loop.run_in_executor(None, renderer.pygame_event_loop, loop, pygame_event_queue)
     render_task = asyncio.ensure_future(renderer.render(rcs))
-    event_task = asyncio.ensure_future(renderer.handle_pygame_events(pygame_event_queue))
+    event_task = asyncio.ensure_future(renderer.register_pygame_events(pygame_event_queue))
     queue_task = asyncio.ensure_future(rcs.enqueue(loop, util.intercept_frame, util.intercept_telemetry))
     try:
         loop.run_forever()

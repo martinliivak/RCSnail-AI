@@ -5,7 +5,7 @@ from av import VideoFrame
 
 
 class Car:
-    def __init__(self):
+    def __init__(self, update_override=None):
         # units in percentage range 0..1
         self.steering = 0.0
         self.throttle = 0.0
@@ -34,7 +34,27 @@ class Car:
         # telemetry
         self.batVoltage_mV = 0
 
-    def update(self, dt):
+        self.__control_override = update_override is not None
+        self.__update_override = update_override
+
+    async def update(self, dt):
+        self.update_steering(dt)
+        self.update_linear_movement(dt)
+        self.update_direction()
+
+        if self.__control_override:
+            await self.__update_override(self)
+
+        # calculate virtual speed
+        if self.up_down == self.down_down:
+            # nothing or both pressed
+            self.virtual_speed = max(0.0, min(self.max_virtual_speed,
+                                              self.virtual_speed - dt * self.min_deceleration))
+        else:
+            self.virtual_speed = max(0.0, min(self.max_virtual_speed,
+                                              self.virtual_speed + dt * (self.throttle - self.braking_k * self.braking)))
+
+    def update_steering(self, dt):
         # calculate steering
         if (not self.left_down) and (not self.right_down):
             # free center positioning
@@ -47,12 +67,13 @@ class Car:
         elif not self.left_down and self.right_down:
             self.steering = min(1.0, self.steering + dt * self.steering_speed)
 
+    def update_linear_movement(self, dt):
         # calculating gear, throttle, braking
         if self.up_down and not self.down_down:
             if self.gear == 0:
                 self.gear = 1
                 self.throttle = 0.0
-            if self.gear == 1:     # drive accelerating
+            if self.gear == 1:  # drive accelerating
                 self.throttle = min(self.max_acceleration, self.throttle + dt * self.acceleration_speed)
                 self.braking = 0.0
             elif self.gear == -1:  # reverse braking
@@ -62,7 +83,7 @@ class Car:
             if self.gear == 0:
                 self.gear = -1
                 self.throttle = 0.0
-            if self.gear == 1:     # drive braking
+            if self.gear == 1:  # drive braking
                 self.braking = min(self.max_braking, self.braking + dt * self.braking_speed)
                 self.throttle = 0.0
             elif self.gear == -1:  # reverse accelerating
@@ -72,15 +93,7 @@ class Car:
             self.throttle = max(0.0, self.throttle - dt * self.deceleration_speed)
             self.braking = max(0.0, self.braking - dt * self.deceleration_speed)
 
-        # calculate virtual speed
-        if self.up_down == self.down_down:
-            # nothing or both pressed
-            self.virtual_speed = max(0.0, min(self.max_virtual_speed,
-                                              self.virtual_speed - dt * self.min_deceleration))
-        else:
-            self.virtual_speed = max(0.0, min(self.max_virtual_speed,
-                                              self.virtual_speed + dt * (self.throttle - self.braking_k * self.braking)))
-
+    def update_direction(self):
         # conditions to change the direction
         if not self.up_down and not self.down_down and self.virtual_speed < 0.01:
             self.gear = 0
@@ -107,7 +120,7 @@ class PygameRenderer:
             event = pygame.event.wait()
             asyncio.run_coroutine_threadsafe(event_queue.put(event), loop=loop)
 
-    async def handle_pygame_events(self, event_queue):
+    async def register_pygame_events(self, event_queue):
         while True:
             event = await event_queue.get()
             if event.type == pygame.QUIT:
@@ -194,7 +207,7 @@ class PygameRenderer:
             pygame.event.pump()
             last_time, current_time = current_time, time.time()
             await asyncio.sleep(1 / self.FPS - (current_time - last_time))  # tick
-            self.car.update((current_time - last_time) / 1.0)
+            await self.car.update((current_time - last_time) / 1.0)
             await rcs.updateControl(self.car.gear, self.car.steering, self.car.throttle, self.car.braking)
             self.screen.fill(self.black)
             if isinstance(self.latest_frame, VideoFrame):
