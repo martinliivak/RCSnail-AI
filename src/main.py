@@ -1,32 +1,15 @@
-import asyncio
 import os
-from rcsnail import RCSnail
-from src.utilities.pygame_utils import Car, PygameRenderer
+import asyncio
 import pygame
 import logging
+
+from rcsnail import RCSnail
+from src.utilities.pygame_utils import Car, PygameRenderer
+from src.utilities.pipeline_utils import Util
 
 window_width = 960
 window_height = 480
 
-
-class Util:
-    def __init__(self, renderer):
-        self.renderer = renderer
-        self.frame = None
-        self.telemetry = None
-
-    def get_current_state(self):
-        return self.frame, self.telemetry
-
-    def intercept_frame(self, frame):
-        self.renderer.handle_new_frame(frame)
-        self.frame = frame.to_ndarray()
-        #print(self.frame.shape)
-        #print(self.frame)
-
-    def intercept_telemetry(self, telemetry):
-        self.telemetry = telemetry
-        print(self.telemetry)
 
 def main():
     print('RCSnail manual drive demo')
@@ -45,12 +28,12 @@ def main():
     screen = pygame.display.set_mode((window_width, window_height))
 
     car = Car()
-    renderer = PygameRenderer()
+    renderer = PygameRenderer(screen, car)
     util = Util(renderer)
 
     pygame_task = loop.run_in_executor(None, renderer.pygame_event_loop, loop, pygame_event_queue)
-    render_task = asyncio.ensure_future(renderer.render(screen, car, rcs))
-    event_task = asyncio.ensure_future(renderer.handle_pygame_events(pygame_event_queue, car))
+    render_task = asyncio.ensure_future(renderer.render(rcs))
+    event_task = asyncio.ensure_future(renderer.handle_pygame_events(pygame_event_queue))
     queue_task = asyncio.ensure_future(rcs.enqueue(loop, util.intercept_frame, util.intercept_telemetry))
     try:
         loop.run_forever()

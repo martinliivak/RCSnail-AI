@@ -10,7 +10,8 @@ pip install --global-option=build_ext --global-option="-ID:\RCSnail\RCSnailPy\3r
 pip install Pyrebase opencv-python websockets requests python-firebase firebasedata
 
 
-
+###### RCSnail library
+pip install -e ./RCSnailPy
 
 
 
