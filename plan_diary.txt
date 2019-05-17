@@ -1,3 +1,13 @@
 07.04.19	Get a working initial connectivity script on repository. Resolve library import issue. Reassess the scope.
 
 12.04.19	Reassess the new scope and discuss. Set up a general expandable framework for machine learning.
+
+04.05.19	Added improvements needed for ML to RCSnail libraries. Improved initial framework so it's almost ready for learning.
+		DAGGER implementation using Keras: https://github.com/avisingh599/imitation-dagger/blob/master/dagger.py
+
+11.05.19	"Sobel edge detection method cannot produce smooth and thin edge compared to canny method." Idea: 
+		lower 2/3 or 1/2 of the camera image -> canny edge detection -> numpy.nonzero or equivalent to get "x-y" coordinates
+		or the curve -> find curve equation with whatever fitter -> feed this into NN
+
+17.05.19	Adding a recording mechanism to save training data.
+
