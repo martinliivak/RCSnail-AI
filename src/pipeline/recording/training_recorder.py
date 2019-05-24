@@ -19,7 +19,8 @@ class TrainingRecorder:
         self.session_telemetry.append(telemetry)
 
     def save_session(self):
-        assert len(self.session_telemetry) == len(self.session_frames)
+        assert len(self.session_telemetry) == len(self.session_frames), "Video and telemetry sizes are not identical"
+
         self.record_telemetry()
         self.record_video()
 
@@ -33,7 +34,7 @@ class TrainingRecorder:
         out = cv2.VideoWriter(self.training_session + ".avi", fourcc, self.fps, self.resolution)
 
         for frame in self.session_frames:
-            out.write(frame.to_image())
+            out.write(frame)
 
         out.release()
 
