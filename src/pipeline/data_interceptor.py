@@ -28,6 +28,7 @@ class DataInterceptor:
     def intercept_telemetry(self, telemetry):
         self.telemetry = telemetry
 
+    # TODO async or sync - file writing pool?
     async def record_current_state(self):
         scaled_frame = self.scale_frame(self.frame)
         print(self.frame.shape)

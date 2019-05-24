@@ -32,10 +32,10 @@ def main():
     #car = Car(interceptor.car_update_override)
     car = Car()
     renderer = PygameRenderer(screen, car)
-    recorder = TrainingRecorder()
+    recorder = TrainingRecorder("./tempfile")
 
     interceptor.set_renderer(renderer)
-    interceptor.set_renderer(recorder)
+    interceptor.set_recorder(recorder)
 
     pygame_task = loop.run_in_executor(None, renderer.pygame_event_loop, loop, pygame_event_queue)
     render_task = asyncio.ensure_future(renderer.render(rcs))
@@ -52,6 +52,7 @@ def main():
         render_task.cancel()
         event_task.cancel()
         pygame.quit()
+        recorder.save_session()
 
 
 if __name__ == "__main__":
