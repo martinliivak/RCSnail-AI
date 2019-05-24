@@ -15,7 +15,7 @@ class TrainingRecorder:
         print("recorder:")
         print(telemetry)
         print(frame.shape)
-        self.session_frames.append(frame)
+        self.session_frames.append(frame.to_image().resize(self.resolution))
         self.session_telemetry.append(telemetry)
 
     def save_session(self):
