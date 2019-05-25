@@ -3,8 +3,10 @@ import asyncio
 import pygame
 import logging
 from rcsnail import RCSnail
+
+from src.pipeline.recording.training_recorder import TrainingRecorder
 from src.utilities.pygame_utils import Car, PygameRenderer
-from src.utilities.pipeline_utils import Util
+from src.pipeline.data_interceptor import DataInterceptor
 
 window_width = 960
 window_height = 480
@@ -22,19 +24,25 @@ def main():
     loop = asyncio.get_event_loop()
     pygame_event_queue = asyncio.Queue()
     pygame.init()
-
     pygame.display.set_caption("RCSnail API manual drive demo")
     screen = pygame.display.set_mode((window_width, window_height))
 
-    util = Util()
+    recording_resolution = (60, 40)
+
+    interceptor = DataInterceptor(resolution=recording_resolution)
+    #car = Car(update_override=interceptor.car_update_override)
     car = Car()
     renderer = PygameRenderer(screen, car)
-    util.set_renderer(renderer)
+    recorder = TrainingRecorder("../training/tempfile", resolution=recording_resolution)
+
+    interceptor.set_renderer(renderer)
+    interceptor.set_recorder(recorder)
 
     pygame_task = loop.run_in_executor(None, renderer.pygame_event_loop, loop, pygame_event_queue)
     render_task = asyncio.ensure_future(renderer.render(rcs))
     event_task = asyncio.ensure_future(renderer.register_pygame_events(pygame_event_queue))
-    queue_task = asyncio.ensure_future(rcs.enqueue(loop, util.intercept_frame, util.intercept_telemetry))
+    queue_task = asyncio.ensure_future(rcs.enqueue(loop, interceptor.intercept_frame, interceptor.intercept_telemetry))
+
     try:
         loop.run_forever()
     except KeyboardInterrupt:
@@ -45,6 +53,7 @@ def main():
         render_task.cancel()
         event_task.cancel()
         pygame.quit()
+        recorder.save_session()
 
 
 if __name__ == "__main__":
