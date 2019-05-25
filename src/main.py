@@ -32,7 +32,7 @@ def main():
     #car = Car(interceptor.car_update_override)
     car = Car()
     renderer = PygameRenderer(screen, car)
-    recorder = TrainingRecorder("./tempfile")
+    recorder = TrainingRecorder("../training/tempfile")
 
     interceptor.set_renderer(renderer)
     interceptor.set_recorder(recorder)

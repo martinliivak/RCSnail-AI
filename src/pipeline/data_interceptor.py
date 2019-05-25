@@ -23,20 +23,15 @@ class DataInterceptor:
 
     def intercept_frame(self, frame):
         self.renderer.handle_new_frame(frame)
+        self.frame = frame.to_image().resize(self.resolution)
         self.record_current_state()
+        print(self.telemetry)
 
     def intercept_telemetry(self, telemetry):
         self.telemetry = telemetry
 
-    # TODO async or sync - file writing pool?
-    async def record_current_state(self):
-        scaled_frame = self.scale_frame(self.frame)
-        print(self.frame.shape)
-        print(scaled_frame.shape)
-        self.training_recorder.record(scaled_frame, self.telemetry)
-
-    def scale_frame(self, frame):
-        return frame.reformat(self.resolution[0], self.resolution[1], None)
+    def record_current_state(self):
+        self.training_recorder.record(self.frame, self.telemetry)
 
     async def car_update_override(self, car):
         self.current_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
