@@ -3,6 +3,7 @@ import asyncio
 
 from src.pipeline.car_controls import CarControls
 
+
 class DataInterceptor:
     def __init__(self, resolution=(60, 40), model=None):
         self.renderer = None

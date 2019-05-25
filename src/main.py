@@ -24,15 +24,16 @@ def main():
     loop = asyncio.get_event_loop()
     pygame_event_queue = asyncio.Queue()
     pygame.init()
-
     pygame.display.set_caption("RCSnail API manual drive demo")
     screen = pygame.display.set_mode((window_width, window_height))
 
-    interceptor = DataInterceptor()
-    #car = Car(interceptor.car_update_override)
+    recording_resolution = (60, 40)
+
+    interceptor = DataInterceptor(resolution=recording_resolution)
+    #car = Car(update_override=interceptor.car_update_override)
     car = Car()
     renderer = PygameRenderer(screen, car)
-    recorder = TrainingRecorder("../training/tempfile")
+    recorder = TrainingRecorder("../training/tempfile", resolution=recording_resolution)
 
     interceptor.set_renderer(renderer)
     interceptor.set_recorder(recorder)

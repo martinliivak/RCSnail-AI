@@ -21,7 +21,7 @@ class TrainingRecorder:
         assert session_length == len(self.session_frames), "Video and telemetry sizes are not identical"
         print("Number of training instances to be saved: " + str(session_length))
 
-        with open(self.training_session + '.csv', 'a') as file:
+        with open(self.training_session + '.csv', 'w') as file:
             out = cv2.VideoWriter(self.training_session + ".avi",
                                   cv2.VideoWriter_fourcc(*'DIVX'),
                                   self.fps,
