@@ -5,9 +5,9 @@ from src.pipeline.car_controls import CarControls
 
 
 class DataInterceptor:
-    def __init__(self, resolution=(60, 40), model=None):
+    def __init__(self, resolution=(60, 40), model=None, recorder=None):
         self.renderer = None
-        self.training_recorder = None
+        self.training_recorder = recorder
         self.resolution = resolution
         self.model = model
 
@@ -16,16 +16,17 @@ class DataInterceptor:
         self.current_controls = None
         self.override_controls = None
 
+        self.recording_enabled = self.training_recorder is not None
+
     def set_renderer(self, renderer):
         self.renderer = renderer
 
-    def set_recorder(self, recorder):
-        self.training_recorder = recorder
-
     def intercept_frame(self, frame):
         self.renderer.handle_new_frame(frame)
-        self.frame = self.scale_frame(frame)
-        self.record_current_state()
+
+        if self.recording_enabled:
+            self.frame = self.scale_frame(frame)
+            self.record_current_state()
 
     def intercept_telemetry(self, telemetry):
         self.telemetry = telemetry

@@ -27,16 +27,18 @@ def main():
     pygame.display.set_caption("RCSnail API manual drive demo")
     screen = pygame.display.set_mode((window_width, window_height))
 
+    # TODO refactor this into a separate configuration manager
     recording_resolution = (60, 40)
+    training_files_path = "../training/tempfile"
+    # update_override is None or interceptor.car_update_override
+    update_override = None
+    # recorder is None or TrainingRecorder
+    recorder = TrainingRecorder(training_files_path, resolution=recording_resolution)
 
-    interceptor = DataInterceptor(resolution=recording_resolution)
-    #car = Car(update_override=interceptor.car_update_override)
-    car = Car()
+    interceptor = DataInterceptor(resolution=recording_resolution, recorder=recorder)
+    car = Car(update_override=update_override)
     renderer = PygameRenderer(screen, car)
-    recorder = TrainingRecorder("../training/tempfile", resolution=recording_resolution)
-
     interceptor.set_renderer(renderer)
-    interceptor.set_recorder(recorder)
 
     pygame_task = loop.run_in_executor(None, renderer.pygame_event_loop, loop, pygame_event_queue)
     render_task = asyncio.ensure_future(renderer.render(rcs))
