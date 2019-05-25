@@ -23,15 +23,17 @@ class DataInterceptor:
 
     def intercept_frame(self, frame):
         self.renderer.handle_new_frame(frame)
-        self.frame = frame.to_image().resize(self.resolution)
+        self.frame = self.scale_frame(frame)
         self.record_current_state()
-        print(self.telemetry)
 
     def intercept_telemetry(self, telemetry):
         self.telemetry = telemetry
 
     def record_current_state(self):
         self.training_recorder.record(self.frame, self.telemetry)
+
+    def scale_frame(self, frame):
+        return frame.to_image().resize(self.resolution)
 
     async def car_update_override(self, car):
         self.current_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
