@@ -12,7 +12,7 @@ class TrainingReader:
     def __init__(self, path_to_training="../training/"):
         self.path_to_training = path_to_training
 
-    def extract_training_data(self, filename):
+    def extract_training_video(self, filename):
         cap = cv2.VideoCapture(self.path_to_training + filename)
         training_images = []
 
