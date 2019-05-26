@@ -55,7 +55,9 @@ def main():
         render_task.cancel()
         event_task.cancel()
         pygame.quit()
-        recorder.save_session()
+
+        if recorder is not None:
+            recorder.save_session()
 
 
 if __name__ == "__main__":

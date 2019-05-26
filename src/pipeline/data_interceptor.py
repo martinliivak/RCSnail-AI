@@ -1,7 +1,6 @@
+import numpy as np
 
-import asyncio
-
-from src.pipeline.car_controls import CarControls
+from src.utilities.car_controls import CarControls
 
 
 class DataInterceptor:
@@ -23,19 +22,19 @@ class DataInterceptor:
 
     def intercept_frame(self, frame):
         self.renderer.handle_new_frame(frame)
+        self.frame = self.__convert_frame(frame)
 
         if self.recording_enabled:
-            self.frame = self.scale_frame(frame)
-            self.record_current_state()
+            self.__record_current_state()
 
     def intercept_telemetry(self, telemetry):
         self.telemetry = telemetry
 
-    def record_current_state(self):
-        self.training_recorder.record(self.frame, self.telemetry)
+    def __convert_frame(self, frame):
+        return np.array(frame.to_image().resize(self.resolution))
 
-    def scale_frame(self, frame):
-        return frame.to_image().resize(self.resolution)
+    def __record_current_state(self):
+        self.training_recorder.record(self.frame, self.telemetry)
 
     async def car_update_override(self, car):
         self.current_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
