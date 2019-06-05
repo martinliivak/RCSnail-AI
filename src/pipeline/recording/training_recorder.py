@@ -1,6 +1,5 @@
-
-import numpy as np
 import cv2
+import json
 
 
 class TrainingRecorder:
@@ -29,8 +28,8 @@ class TrainingRecorder:
 
             for i in range(session_length):
                 if self.session_telemetry[i] is not None and self.session_frames[i] is not None:
-                    file.write(str(self.session_telemetry[i]) + "\n")
-                    out.write(np.array(self.session_frames[i]))
+                    file.write(json.dumps(self.session_telemetry[i]) + "\n")
+                    out.write(self.session_frames[i])
 
             out.release()
         print("Telemetry and video saved successfully.")
