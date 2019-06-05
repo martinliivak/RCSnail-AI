@@ -1,5 +1,4 @@
 
-
 class CarMapping:
     def __init__(self):
         # TODO temporary mappings

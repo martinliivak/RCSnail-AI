@@ -1,4 +1,3 @@
-
 import cv2
 import pandas as pd
 import numpy as np
@@ -25,7 +24,7 @@ class TrainingFileReader:
         cap.release()
         return np.array(training_images)
 
-    def extract_full_telemetry_as_dataframe(self, filename):
+    def extract_training_telemetry(self, filename):
         telemetry_list = []
         with open(self.path_to_training + filename) as file:
             for line in file:

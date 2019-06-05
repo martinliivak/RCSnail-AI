@@ -8,7 +8,7 @@ def main():
     reader = TrainingFileReader()
     collector = TrainingCollector()
 
-    df = reader.extract_full_telemetry_as_dataframe(filename + ".csv")
+    df = reader.extract_training_telemetry(filename + ".csv")
     print(df.shape)
 
     print(df.iloc[1])
