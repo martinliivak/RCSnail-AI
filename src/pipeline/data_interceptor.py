@@ -44,19 +44,13 @@ class DataInterceptor:
         print(self.current_controls)
 
         if self.frame is not None and self.telemetry is not None:
-            self.override_controls = self.__controls_from_prediction(self.model.predict(self.frame, self.telemetry))
+            self.override_controls = self.model.predict(self.frame, self.telemetry)
 
             if self.override_controls is not None:
                 car.gear = self.override_controls.gear
                 car.steering = self.override_controls.steering
                 car.throttle = self.override_controls.throttle
                 car.braking = self.override_controls.braking
-
-    # TODO move this method into the prediction method
-    def __controls_from_prediction(self, prediction):
-        prediction_values = prediction.tolist()[0]
-
-        return CarControls(prediction_values[0], prediction_values[1], prediction_values[2], prediction_values[3])
 
     def stop_recording(self):
         self.training_recorder.stop_recording()

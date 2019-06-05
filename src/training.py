@@ -9,12 +9,9 @@ def main():
     collector = TrainingCollector()
 
     df = reader.extract_training_telemetry(filename + ".csv")
-    print(df.shape)
 
-    print(df.iloc[1])
     labels = collector.collect_labels(df)
-    print(labels.iloc[1])
-
+    numeric_inputs = collector.collect_numeric_inputs(df)
     video = reader.extract_training_video(filename + ".avi")
     print(video.shape)
 

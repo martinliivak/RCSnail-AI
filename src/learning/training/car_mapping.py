@@ -1,7 +1,7 @@
 
 class CarMapping:
     def __init__(self):
-        # TODO temporary mappings
+        # TODO update mappings when the data is in telemetry
         self.map = {
             "gear": "g",
             "steering": "sa",

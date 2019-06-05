@@ -32,5 +32,6 @@ class TrainingFileReader:
 
         return pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0]._fields)
 
-    def __extract_telemetry_from_json(self, line):
+    @staticmethod
+    def __extract_telemetry_from_json(line):
         return json.loads(line, object_hook=lambda d: namedtuple('stuff', d.keys())(*d.values()))

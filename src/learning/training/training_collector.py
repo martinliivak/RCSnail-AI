@@ -6,7 +6,7 @@ class TrainingCollector:
         self.__mapping = CarMapping()
 
     def collect_labels(self, dataframe):
-        # TODO temporarily commented out for testing
+        # TODO uncomment when real data exists
         #return dataframe[[self.__mapping.gear, self.__mapping.steering,
         #                  self.__mapping.throttle, self.__mapping.braking]]
         return dataframe[[self.__mapping.whatever, self.__mapping.steering]]
