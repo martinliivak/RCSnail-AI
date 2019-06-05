@@ -1,15 +1,22 @@
+from src.learning.training.training_collector import TrainingCollector
+from src.learning.training.training_file_reader import TrainingFileReader
 
-from src.learning.training.training_reader import TrainingReader
+filename = "tempfile"
 
 
 def main():
-    reader = TrainingReader()
-    df = reader.extract_full_telemetry_as_dataframe("25_05_2019_test_1.csv")
+    reader = TrainingFileReader()
+    collector = TrainingCollector()
+
+    df = reader.extract_full_telemetry_as_dataframe(filename + ".csv")
     print(df.shape)
 
-    something = reader.extract_training_video("25_05_2019_test_1.avi")
-    print(something)
-    print(something.shape)
+    print(df.iloc[1])
+    labels = collector.collect_labels(df)
+    print(labels.iloc[1])
+
+    video = reader.extract_training_video(filename + ".avi")
+    print(video.shape)
 
 
 if __name__ == "__main__":

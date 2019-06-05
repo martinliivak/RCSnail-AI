@@ -5,10 +5,8 @@ import numpy as np
 import json
 from collections import namedtuple
 
-from src.utilities.car_controls import CarControls
 
-
-class TrainingReader:
+class TrainingFileReader:
     def __init__(self, path_to_training="../training/"):
         self.path_to_training = path_to_training
 
@@ -35,12 +33,5 @@ class TrainingReader:
 
         return pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0]._fields)
 
-    def extract_car_controls(self, line):
-        return self.__extract_car_controls_from_telemetry(self.__extract_telemetry_from_json(line))
-
     def __extract_telemetry_from_json(self, line):
         return json.loads(line, object_hook=lambda d: namedtuple('stuff', d.keys())(*d.values()))
-
-    def __extract_car_controls_from_telemetry(self, telemetry):
-        # TODO json keys are temporary except for steering angle - sa
-        return CarControls(telemetry["gear"], telemetry["sa"], telemetry["throttle"], telemetry["braking"])

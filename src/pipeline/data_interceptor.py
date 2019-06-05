@@ -22,13 +22,16 @@ class DataInterceptor:
 
     def intercept_frame(self, frame):
         self.renderer.handle_new_frame(frame)
-        self.frame = self.__convert_frame(frame)
 
-        if self.recording_enabled:
-            self.__record_current_state()
+        if frame is not None:
+            self.frame = self.__convert_frame(frame)
+
+            if self.recording_enabled:
+                self.__record_current_state()
 
     def intercept_telemetry(self, telemetry):
         self.telemetry = telemetry
+        print(self.telemetry)
 
     def __convert_frame(self, frame):
         return np.array(frame.to_image().resize(self.resolution))
@@ -40,14 +43,20 @@ class DataInterceptor:
         self.current_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
         print(self.current_controls)
 
-        self.override_controls = await self.model.predict(self.frame, self.telemetry)
-        #self.override_controls = CarControls(0, 0.5, 0.5, 0.0)
+        if self.frame is not None and self.telemetry is not None:
+            self.override_controls = self.__controls_from_prediction(self.model.predict(self.frame, self.telemetry))
 
-        if self.override_controls is not None:
-            car.gear = self.override_controls.gear
-            car.steering = self.override_controls.steering
-            car.throttle = self.override_controls.throttle
-            car.braking = self.override_controls.braking
+            if self.override_controls is not None:
+                car.gear = self.override_controls.gear
+                car.steering = self.override_controls.steering
+                car.throttle = self.override_controls.throttle
+                car.braking = self.override_controls.braking
+
+    # TODO move this method into the prediction method
+    def __controls_from_prediction(self, prediction):
+        prediction_values = prediction.tolist()[0]
+
+        return CarControls(prediction_values[0], prediction_values[1], prediction_values[2], prediction_values[3])
 
     def stop_recording(self):
         self.training_recorder.stop_recording()
