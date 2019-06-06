@@ -18,6 +18,11 @@ class TrainingRecorder:
     def save_session(self):
         session_length = len(self.session_telemetry)
         assert session_length == len(self.session_frames), "Video and telemetry sizes are not identical"
+
+        if session_length <= 0:
+            print("Nothing to record, closing.")
+            return
+
         print("Number of training instances to be saved: " + str(session_length))
 
         with open(self.training_session + '.csv', 'w') as file:

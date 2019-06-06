@@ -5,6 +5,7 @@ import pygame
 import logging
 from rcsnail import RCSnail
 
+from src.learning.model_wrapper import ModelWrapper
 from src.pipeline.recording.training_recorder import TrainingRecorder
 from src.utilities.pygame_utils import Car, PygameRenderer
 from src.pipeline.data_interceptor import DataInterceptor
@@ -13,7 +14,7 @@ window_width = 960
 window_height = 480
 
 
-def get_training_file_name(path_to_training="../training/"):
+def get_training_file_name(path_to_training):
     date = datetime.datetime.today().strftime("%Y_%m_%d")
     files_from_same_date = list(filter(lambda file: date in file, os.listdir(path_to_training)))
 
@@ -37,13 +38,15 @@ def main():
 
     # TODO refactor this into a separate configuration manager
     recording_resolution = (60, 40)
-    training_files_path = "../training/" + get_training_file_name()
-    # update_override is None or interceptor.car_update_override
-    update_override = None
+    path_to_training = "../training/"
+    training_files_path = path_to_training + get_training_file_name(path_to_training=path_to_training)
     # recorder is None or TrainingRecorder
     recorder = TrainingRecorder(training_files_path, resolution=recording_resolution)
 
-    interceptor = DataInterceptor(resolution=recording_resolution, recorder=recorder)
+    interceptor = DataInterceptor(resolution=recording_resolution, recorder=recorder, model=ModelWrapper(None))
+    # update_override is None or interceptor.car_update_override
+    update_override = None
+
     car = Car(update_override=update_override)
     renderer = PygameRenderer(screen, car)
     interceptor.set_renderer(renderer)
@@ -56,13 +59,14 @@ def main():
     try:
         loop.run_forever()
     except KeyboardInterrupt:
-        pass
+        print("Closing due to keyboard interrupt.")
     finally:
         queue_task.cancel()
         pygame_task.cancel()
         render_task.cancel()
         event_task.cancel()
         pygame.quit()
+        asyncio.ensure_future(rcs.close_client_session())
 
         if recorder is not None:
             recorder.save_session()

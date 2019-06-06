@@ -1,4 +1,5 @@
-from src.learning.training.training_file_reader import extract_telemetry_from_json
+import random
+
 from src.utilities.car_controls import CarControls
 
 
@@ -17,12 +18,11 @@ class ModelWrapper:
             batch_size=8)
 
     def predict(self, frame, telemetry_json):
-        telemetry_tuple = extract_telemetry_from_json(telemetry_json)
-        print(telemetry_tuple)
+        print(telemetry_json["sa"])
 
-        predictions = self.model.predict([telemetry_tuple, frame])
-
-        return self.__controls_from_prediction(predictions)
+        #predictions = self.model.predict([telemetry_tuple, frame])
+        #return self.__controls_from_prediction(predictions)
+        return CarControls(1, 0.1 - random.random()*0.2, 0.6 - random.random()*0.2, 0)
 
 
     @staticmethod

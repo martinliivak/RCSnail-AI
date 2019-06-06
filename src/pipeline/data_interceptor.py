@@ -31,7 +31,6 @@ class DataInterceptor:
 
     def intercept_telemetry(self, telemetry):
         self.telemetry = telemetry
-        print(self.telemetry)
 
     def __convert_frame(self, frame):
         return np.array(frame.to_image().resize(self.resolution))
@@ -41,8 +40,7 @@ class DataInterceptor:
 
     async def car_update_override(self, car):
         self.current_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
-        print(self.current_controls)
-
+        
         if self.frame is not None and self.telemetry is not None:
             self.override_controls = self.model.predict(self.frame, self.telemetry)
 
