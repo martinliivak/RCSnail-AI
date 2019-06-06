@@ -5,6 +5,10 @@ import json
 from collections import namedtuple
 
 
+def extract_telemetry_from_json(line):
+    return json.loads(line, object_hook=lambda d: namedtuple('stuff', d.keys())(*d.values()))
+
+
 class TrainingFileReader:
     def __init__(self, path_to_training="../training/"):
         self.path_to_training = path_to_training
@@ -28,10 +32,6 @@ class TrainingFileReader:
         telemetry_list = []
         with open(self.path_to_training + filename) as file:
             for line in file:
-                telemetry_list.append(self.__extract_telemetry_from_json(line))
+                telemetry_list.append(extract_telemetry_from_json(line))
 
         return pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0]._fields)
-
-    @staticmethod
-    def __extract_telemetry_from_json(line):
-        return json.loads(line, object_hook=lambda d: namedtuple('stuff', d.keys())(*d.values()))
