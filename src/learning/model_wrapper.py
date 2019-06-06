@@ -1,18 +1,22 @@
 import numpy as np
-from keras.models import load_model
+from keras.models import load_model, save_model
 
 from src.utilities.car_controls import CarControls
 
 
 class ModelWrapper:
-    def __init__(self):
+    def __init__(self, path_to_models="../models/"):
         self.model = None
+        self.path_to_models = path_to_models
 
     def create_model(self, model):
         self.model = model
 
-    def load_model(self, path_to_model_file):
-        self.model = load_model(path_to_model_file)
+    def load_model(self, model_file):
+        self.model = load_model(self.path_to_models + model_file)
+
+    def save_model(self, model_file):
+        self.model.save(self.path_to_models + model_file)
 
     def fit(self, train_tuple, test_tuple):
         train_frames, train_numeric_inputs, train_labels = train_tuple
