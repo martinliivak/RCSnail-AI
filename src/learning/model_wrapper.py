@@ -1,11 +1,15 @@
 import random
+from keras.models import load_model
 
 from src.utilities.car_controls import CarControls
 
 
 class ModelWrapper:
-    def __init__(self, model):
-        self.model = model
+    def __init__(self):
+        self.model = None
+
+    def load_model(self, path_to_model_file):
+        self.model = load_model(path_to_model_file)
 
     def fit(self, train_tuple, test_tuple):
         train_frames, train_numeric_inputs, train_labels = train_tuple
