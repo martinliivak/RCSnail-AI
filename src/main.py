@@ -1,4 +1,5 @@
 import os
+import datetime
 import asyncio
 import pygame
 import logging
@@ -10,6 +11,13 @@ from src.pipeline.data_interceptor import DataInterceptor
 
 window_width = 960
 window_height = 480
+
+
+def get_training_file_name(path_to_training="../training/"):
+    date = datetime.datetime.today().strftime("%Y_%m_%d")
+    files_from_same_date = list(filter(lambda file: date in file, os.listdir(path_to_training)))
+
+    return date + "_test_" + str(int(len(files_from_same_date) / 2 + 1))
 
 
 def main():
@@ -29,7 +37,7 @@ def main():
 
     # TODO refactor this into a separate configuration manager
     recording_resolution = (60, 40)
-    training_files_path = "../training/tempfile"
+    training_files_path = "../training/" + get_training_file_name()
     # update_override is None or interceptor.car_update_override
     update_override = None
     # recorder is None or TrainingRecorder
