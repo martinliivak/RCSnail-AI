@@ -43,7 +43,10 @@ def main():
     # recorder is None or TrainingRecorder
     recorder = TrainingRecorder(training_files_path, resolution=recording_resolution)
 
-    interceptor = DataInterceptor(resolution=recording_resolution, recorder=recorder, model=ModelWrapper(None))
+    wrapped_model = ModelWrapper()
+    #wrapped_model.load_model("../models/whatever.h5")
+
+    interceptor = DataInterceptor(resolution=recording_resolution, recorder=recorder, model=wrapped_model)
     # update_override is None or interceptor.car_update_override
     update_override = None
 

@@ -49,6 +49,3 @@ class DataInterceptor:
                 car.steering = self.override_controls.steering
                 car.throttle = self.override_controls.throttle
                 car.braking = self.override_controls.braking
-
-    def stop_recording(self):
-        self.training_recorder.stop_recording()

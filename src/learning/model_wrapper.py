@@ -1,4 +1,4 @@
-import random
+import numpy as np
 from keras.models import load_model
 
 from src.utilities.car_controls import CarControls
@@ -7,6 +7,9 @@ from src.utilities.car_controls import CarControls
 class ModelWrapper:
     def __init__(self):
         self.model = None
+
+    def create_model(self, model):
+        self.model = model
 
     def load_model(self, path_to_model_file):
         self.model = load_model(path_to_model_file)
@@ -22,12 +25,9 @@ class ModelWrapper:
             batch_size=8)
 
     def predict(self, frame, telemetry_json):
-        print(telemetry_json["sa"])
-
-        #predictions = self.model.predict([telemetry_tuple, frame])
-        #return self.__controls_from_prediction(predictions)
-        return CarControls(1, 0.1 - random.random()*0.2, 0.6 - random.random()*0.2, 0)
-
+        numeric_inputs = np.array([telemetry_json["sa"]])
+        predictions = self.model.predict([numeric_inputs, frame])
+        return self.__controls_from_prediction(predictions)
 
     @staticmethod
     def __controls_from_prediction(prediction):

@@ -5,9 +5,23 @@ from keras.layers.convolutional import MaxPooling2D
 from keras.layers.core import Activation
 from keras.layers.core import Dropout
 from keras.layers.core import Dense
-from keras.layers import Flatten
+from keras.layers import Flatten, concatenate
 from keras.layers import Input
 from keras.models import Model
+from keras.optimizers import Adam
+
+
+def create_multi_model(mlp, cnn):
+    combined_input = concatenate([mlp.output, cnn.output])
+
+    dense_1 = Dense(4, activation="relu")(combined_input)
+    dense_2 = Dense(4, activation="linear")(dense_1)
+    model = Model(inputs=[mlp.input, cnn.input], outputs=dense_2)
+
+    optimizer = Adam(lr=3e-4)
+    model.compile(loss="mean_absolute_percentage_error", optimizer=optimizer)
+
+    return model
 
 
 def create_mlp(dim, regress=False):

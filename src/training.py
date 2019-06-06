@@ -1,4 +1,5 @@
-from src.learning.models import create_cnn, create_mlp
+from src.learning.model_wrapper import ModelWrapper
+from src.learning.models import create_cnn, create_mlp, create_multi_model
 from src.learning.training.training_collector import TrainingCollector
 from src.learning.training.training_file_reader import TrainingFileReader
 
@@ -22,6 +23,11 @@ def main():
     # create the MLP and CNN models
     mlp = create_mlp(numeric_inputs.shape[1], regress=False)
     cnn = create_cnn(regress=False)
+    concat_model = create_multi_model(mlp, cnn)
+
+    wrapped_model = ModelWrapper()
+    wrapped_model.create_model(concat_model)
+    #wrapped_model.fit()
 
 
 if __name__ == "__main__":
