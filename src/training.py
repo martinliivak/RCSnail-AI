@@ -31,7 +31,10 @@ def main():
 
     wrapped_model = ModelWrapper()
     wrapped_model.create_model(concat_model)
-    wrapped_model.fit((video_train, input_train, y_train), (video_test, input_test, y_test))
+    wrapped_model.model.summary()
+
+    wrapped_model.fit((video_train, input_train, y_train), (video_test, input_test, y_test), epochs=2, verbose=1)
+    wrapped_model.save_model(filename)
 
 
 if __name__ == "__main__":

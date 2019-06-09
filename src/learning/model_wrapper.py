@@ -5,7 +5,7 @@ from src.utilities.car_controls import CarControls
 
 
 class ModelWrapper:
-    def __init__(self, path_to_models="../models/"):
+    def __init__(self, path_to_models="../training/models/"):
         self.model = None
         self.path_to_models = path_to_models
 
@@ -13,20 +13,22 @@ class ModelWrapper:
         self.model = model
 
     def load_model(self, model_file):
-        self.model = load_model(self.path_to_models + model_file)
+        self.model = load_model(self.path_to_models + model_file + ".h5")
 
     def save_model(self, model_file):
-        self.model.save(self.path_to_models + model_file)
+        self.model.save(self.path_to_models + model_file + ".h5")
+        print("Model has been saved to " + self.path_to_models + " as " + model_file + ".h5")
 
-    def fit(self, train_tuple, test_tuple):
+    def fit(self, train_tuple, test_tuple, epochs=20, batch_size=8, verbose=0):
         train_frames, train_numeric_inputs, train_labels = train_tuple
         test_frames, test_numeric_inputs, test_labels = test_tuple
 
         self.model.fit(
             [train_numeric_inputs, train_frames], train_labels,
             validation_data=([test_numeric_inputs, test_frames], test_labels),
-            epochs=200,
-            batch_size=8)
+            epochs=epochs,
+            batch_size=batch_size,
+            verbose=verbose)
 
     def predict(self, frame, telemetry_json):
         numeric_inputs = np.array([telemetry_json["sa"]])
