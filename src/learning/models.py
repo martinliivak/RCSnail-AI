@@ -24,10 +24,10 @@ def create_multi_model(mlp, cnn):
     return model
 
 
-def create_mlp(dim, regress=False):
+def create_mlp(input_dim, regress=False):
     """More-less copied from https://www.pyimagesearch.com/2019/02/04/keras-multiple-inputs-and-mixed-data/"""
     model = Sequential()
-    model.add(Dense(4, input_dim=dim, activation="relu"))
+    model.add(Dense(4, input_dim=input_dim, activation="relu"))
 
     if regress:
         model.add(Dense(1, activation="linear"))

@@ -1,3 +1,5 @@
+from sklearn.model_selection import train_test_split
+
 from src.learning.model_wrapper import ModelWrapper
 from src.learning.models import create_cnn, create_mlp, create_multi_model
 from src.learning.training.training_collector import TrainingCollector
@@ -20,14 +22,16 @@ def main():
     print(labels.shape)
     print(numeric_inputs.shape)
 
-    # create the MLP and CNN models
-    mlp = create_mlp(numeric_inputs.shape[1], regress=False)
-    cnn = create_cnn(regress=False)
+    mlp = create_mlp(input_dim=numeric_inputs.shape[1], regress=False)
+    cnn = create_cnn(input_shape=video.shape[1:], regress=False)
     concat_model = create_multi_model(mlp, cnn)
+
+    video_train, video_test, input_train, input_test, y_train, y_test = train_test_split(
+        video, numeric_inputs, labels, test_size=0.2)
 
     wrapped_model = ModelWrapper()
     wrapped_model.create_model(concat_model)
-    #wrapped_model.fit()
+    wrapped_model.fit((video_train, input_train, y_train), (video_test, input_test, y_test))
 
 
 if __name__ == "__main__":
