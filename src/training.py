@@ -18,10 +18,6 @@ def main():
     labels = collector.collect_labels(telemetry_frame)
     numeric_inputs = collector.collect_numeric_inputs(telemetry_frame)
 
-    print(video.shape)
-    print(labels.shape)
-    print(numeric_inputs.shape)
-
     mlp = create_mlp(input_dim=numeric_inputs.shape[1], regress=False)
     cnn = create_cnn(input_shape=video.shape[1:], regress=False)
     concat_model = create_multi_model(mlp, cnn)
