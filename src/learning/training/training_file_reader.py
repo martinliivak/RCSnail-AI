@@ -39,8 +39,10 @@ class TrainingFileReader:
                 telemetry_list.append(extract_namedtuple_from_json_string(line))
 
         telemetry = pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0]._fields)
-        control_labels = telemetry.diff()[[CarMapping.steering, CarMapping.throttle, CarMapping.braking]].add_suffix("d_")
+        control_labels = telemetry.diff()[[CarMapping.steering, CarMapping.throttle, CarMapping.braking]]
         gear_labels = telemetry[CarMapping.gear].shift(-1)
-        training_df = telemetry.join(control_labels).join(gear_labels)
+        labels = control_labels.join(gear_labels).add_suffix("d_")
+
+        training_df = telemetry.join(labels)
 
         return training_df.drop(training_df.tail(1).index)
