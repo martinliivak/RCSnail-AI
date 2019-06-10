@@ -10,10 +10,16 @@ class TrainingRecorder:
 
         self.session_frames = []
         self.session_telemetry = []
+        self.session_expert_actions = []
 
     def record(self, frame, telemetry):
         self.session_frames.append(frame)
         self.session_telemetry.append(telemetry)
+
+    def record_expert(self, frame, telemetry, expert_actions):
+        self.session_frames.append(frame)
+        self.session_telemetry.append(telemetry)
+        self.session_expert_actions.append(expert_actions)
 
     def save_session(self):
         session_length = len(self.session_telemetry)

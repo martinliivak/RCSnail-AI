@@ -1,7 +1,7 @@
 import numpy as np
-from keras.models import load_model, save_model
+from keras.models import load_model
 
-from src.utilities.car_controls import CarControls
+from src.utilities.car_controls import CarControlDiffs
 
 
 class ModelWrapper:
@@ -30,13 +30,15 @@ class ModelWrapper:
             batch_size=batch_size,
             verbose=verbose)
 
-    def predict(self, frame, telemetry_json):
-        numeric_inputs = np.array([telemetry_json["sa"]])
+    def predict(self, frame, current_state):
+        numeric_inputs = np.array([current_state["sa"]])
         predictions = self.model.predict([numeric_inputs, frame])
-        return self.__controls_from_prediction(predictions)
+
+        return self.__updates_from_prediction(predictions)
 
     @staticmethod
-    def __controls_from_prediction(prediction):
+    def __updates_from_prediction(prediction):
         prediction_values = prediction.tolist()[0]
 
-        return CarControls(prediction_values[0], prediction_values[1], prediction_values[2], prediction_values[3])
+        # TODO normalize gear to integer values, and remove braking if it's very small
+        return CarControlDiffs(prediction_values[0], prediction_values[1], prediction_values[2], prediction_values[3])
