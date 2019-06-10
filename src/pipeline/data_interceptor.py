@@ -13,8 +13,9 @@ class DataInterceptor:
         self.frame = None
         self.telemetry = None
         self.expert_actions = None
-        self.expert_controls = CarControlDiffs(0, 0.0, 0.0, 0.0)
-        self.predicted_diffs = None
+        self.expert_updates = CarControlDiffs(0, 0.0, 0.0, 0.0)
+        self.car_controls = CarControls(0, 0.0, 0.0, 0.0)
+        self.predicted_updates = None
 
         self.recording_enabled = self.training_recorder is not None and not aggregated_recording
         self.aggregation_enabled = self.training_recorder is not None and aggregated_recording
@@ -46,8 +47,10 @@ class DataInterceptor:
         self.training_recorder.record_expert(self.frame, self.telemetry, self.expert_actions)
 
     async def car_update_override(self, car):
-        self.expert_controls = CarControlDiffs(car.gear, car.d_steering, car.d_throttle, car.d_braking)
-        print(self.expert_controls.d_steering)
+        self.expert_updates = CarControlDiffs(car.gear, car.d_steering, car.d_throttle, car.d_braking)
+        self.car_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
+        print(self.expert_updates.d_steering)
+        print(self.car_controls.steering)
         print(self.telemetry["sa"])
 
         if self.aggregation_enabled:
@@ -58,9 +61,9 @@ class DataInterceptor:
 
     def update_car_from_predictions(self, car):
         if self.frame is not None and self.telemetry is not None:
-            self.predicted_diffs = self.model.predict(self.frame, self.telemetry)
+            self.predicted_updates = self.model.predict(self.frame, self.telemetry)
 
-            if self.predicted_diffs is not None:
-                car.gear = self.predicted_diffs.gear
-                car.diff_update_steering(self.predicted_diffs.d_steering)
-                car.diff_update_linear_movement(self.predicted_diffs.d_throttle, self.predicted_diffs.d_braking)
+            if self.predicted_updates is not None:
+                car.gear = self.predicted_updates.gear
+                car.ext_update_steering(self.predicted_updates.d_steering)
+                car.ext_update_linear_movement(self.predicted_updates.d_throttle, self.predicted_updates.d_braking)

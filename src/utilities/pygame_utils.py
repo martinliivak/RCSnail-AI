@@ -121,11 +121,11 @@ class Car:
         if not self.up_down and not self.down_down and self.virtual_speed < 0.01:
             self.gear = 0
 
-    def diff_update_linear_movement(self, d_throttle, d_braking):
+    def ext_update_linear_movement(self, d_throttle, d_braking):
         self.throttle = min(self.max_throttle, self.throttle + d_throttle)
         self.braking = min(self.max_braking, self.braking + d_braking)
 
-    def diff_update_steering(self, d_steering):
+    def ext_update_steering(self, d_steering):
         if d_steering < 0:
             self.steering = max(-1.0, self.steering + d_steering)
         else:
