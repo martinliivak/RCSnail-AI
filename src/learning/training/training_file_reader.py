@@ -28,6 +28,8 @@ class TrainingFileReader:
                 break
 
         cap.release()
+        # removing first image due to gear shifting for labels
+        training_images.pop(0)
         return np.array(training_images)
 
     def extract_training_telemetry(self, filename):
@@ -36,7 +38,9 @@ class TrainingFileReader:
             for line in file:
                 telemetry_list.append(extract_namedtuple_from_json_string(line))
 
-        training_df = pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0]._fields)
-        diffs = training_df.diff()[[CarMapping.steering, CarMapping.throttle, CarMapping.braking]].add_suffix("d_")
+        telemetry = pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0]._fields)
+        control_labels = telemetry.diff()[[CarMapping.steering, CarMapping.throttle, CarMapping.braking]].add_suffix("d_")
+        gear_labels = telemetry[CarMapping.gear].shift(-1)
+        training_df = telemetry.join(control_labels).join(gear_labels)
 
-        return training_df.join(diffs)
+        return training_df.drop(training_df.tail(1).index)
