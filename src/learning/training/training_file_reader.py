@@ -4,6 +4,8 @@ import numpy as np
 import json
 from collections import namedtuple
 
+from src.learning.training.car_mapping import CarMapping
+
 
 def extract_namedtuple_from_json_string(line):
     return json.loads(line, object_hook=lambda d: namedtuple('stuff', d.keys())(*d.values()))
@@ -34,4 +36,7 @@ class TrainingFileReader:
             for line in file:
                 telemetry_list.append(extract_namedtuple_from_json_string(line))
 
-        return pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0]._fields)
+        training_df = pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0]._fields)
+        diffs = training_df.diff()[[CarMapping.steering, CarMapping.throttle, CarMapping.braking]].add_suffix("d_")
+
+        return training_df.join(diffs)
