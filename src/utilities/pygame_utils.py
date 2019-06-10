@@ -24,7 +24,7 @@ class Car:
         self.steering_speed = 5.0
         self.steering_speed_neutral = 3.0
         self.acceleration_speed = 5.0
-        self.deceleration_speed = 2.0
+        self.dissipation_speed = 2.0
         self.braking_speed = 5.0
         # virtual speed
         self.virtual_speed = 0.0
@@ -86,40 +86,42 @@ class Car:
         if self.up_down and not self.down_down:
             if self.gear == 0:
                 self.gear = 1
+                self.d_throttle = dt * self.acceleration_speed
                 self.throttle = 0.0
-                self.d_throttle = 0.0
-                self.d_braking = 0.0
+                self.d_braking = max(-self.braking, -dt * self.braking_speed)
+                self.braking = max(0.0, self.braking + self.d_braking)
             if self.gear == 1:  # drive accelerating
                 self.d_throttle = dt * self.acceleration_speed
-                self.d_braking = 0.0
                 self.throttle = min(self.max_throttle, self.throttle + self.d_throttle)
-                self.braking = 0.0
+                self.d_braking = max(-self.braking, -dt * self.braking_speed)
+                self.braking = max(0.0, self.braking + self.d_braking)
             elif self.gear == -1:  # reverse braking
                 self.d_throttle = 0.0
-                self.d_braking = dt * self.braking_speed
-                self.braking = min(self.max_braking, self.braking + self.d_braking)
                 self.throttle = 0.0
+                self.braking = min(self.max_braking, self.braking + self.d_braking)
+                self.d_braking = dt * self.braking_speed
         elif not self.up_down and self.down_down:
             if self.gear == 0:
                 self.gear = -1
+                self.d_throttle = dt * self.acceleration_speed
                 self.throttle = 0.0
-                self.d_throttle = 0.0
-                self.d_braking = 0.0
+                self.d_braking = max(-self.braking, -dt * self.braking_speed)
+                self.braking = max(0.0, self.braking + self.d_braking)
             if self.gear == 1:  # drive braking
                 self.d_throttle = 0.0
+                self.throttle = 0.0
                 self.d_braking = dt * self.braking_speed
                 self.braking = min(self.max_braking, self.braking + self.d_braking)
-                self.throttle = 0.0
             elif self.gear == -1:  # reverse accelerating
                 self.d_throttle = dt * self.acceleration_speed
-                self.d_braking = 0.0
                 self.throttle = min(self.max_throttle, self.throttle + self.d_throttle)
-                self.braking = 0.0
+                self.d_braking = max(-self.braking, -dt * self.braking_speed)
+                self.braking = max(0.0, self.braking + self.d_braking)
         else:  # both down or both up
-            self.d_throttle = -dt * self.deceleration_speed
-            self.d_braking = -dt * self.deceleration_speed
-            self.throttle = max(0.0, self.throttle - dt * self.deceleration_speed)
-            self.braking = max(0.0, self.braking - dt * self.deceleration_speed)
+            self.d_throttle = -dt * self.dissipation_speed
+            self.throttle = max(0.0, self.throttle + self.d_throttle)
+            self.d_braking = -dt * self.dissipation_speed
+            self.braking = max(0.0, self.braking + self.d_braking)
 
     def diff_update_linear_movement(self, d_throttle, d_braking):
         self.throttle = min(self.max_throttle, self.throttle + d_throttle)
