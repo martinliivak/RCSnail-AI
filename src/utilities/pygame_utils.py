@@ -42,9 +42,9 @@ class Car:
         self.__update_override = update_override
 
     async def update(self, dt):
-        self.update_steering(dt)
-        self.update_linear_movement(dt)
-        self.update_direction()
+        self.__update_steering(dt)
+        self.__update_linear_movement(dt)
+        self.__update_direction()
 
         if self.__control_override:
             await self.__update_override(self)
@@ -58,7 +58,7 @@ class Car:
             self.virtual_speed = max(0.0, min(self.max_virtual_speed,
                                               self.virtual_speed + dt * (self.throttle - self.braking_k * self.braking)))
 
-    def update_steering(self, dt):
+    def __update_steering(self, dt):
         # calculate steering
         if (not self.left_down) and (not self.right_down):
             # free center dissipation
@@ -75,62 +75,61 @@ class Car:
             self.d_steering = dt * self.steering_speed
             self.steering = min(1.0, self.steering + self.d_steering)
 
-    def diff_update_steering(self, d_steering):
-        if d_steering < 0:
-            self.steering = max(-1.0, self.steering + d_steering)
-        else:
-            self.steering = min(1.0, self.steering + d_steering)
-
-    def update_linear_movement(self, dt):
+    def __update_linear_movement(self, dt):
         # calculating gear, throttle, braking
         if self.up_down and not self.down_down:
             if self.gear == 0:
-                self.gear = 1
-                self.d_throttle = dt * self.acceleration_speed
-                self.throttle = 0.0
-                self.d_braking = max(-self.braking, -dt * self.braking_speed)
-                self.braking = max(0.0, self.braking + self.d_braking)
+                self.__takeoff(dt, 1)
             if self.gear == 1:  # drive accelerating
-                self.d_throttle = dt * self.acceleration_speed
-                self.throttle = min(self.max_throttle, self.throttle + self.d_throttle)
-                self.d_braking = max(-self.braking, -dt * self.braking_speed)
-                self.braking = max(0.0, self.braking + self.d_braking)
+                self.__accelerate(dt)
             elif self.gear == -1:  # reverse braking
-                self.d_throttle = 0.0
-                self.throttle = 0.0
-                self.braking = min(self.max_braking, self.braking + self.d_braking)
-                self.d_braking = dt * self.braking_speed
+                self.__decelerate(dt)
         elif not self.up_down and self.down_down:
             if self.gear == 0:
-                self.gear = -1
-                self.d_throttle = dt * self.acceleration_speed
-                self.throttle = 0.0
-                self.d_braking = max(-self.braking, -dt * self.braking_speed)
-                self.braking = max(0.0, self.braking + self.d_braking)
+                self.__takeoff(dt, -1)
             if self.gear == 1:  # drive braking
-                self.d_throttle = 0.0
-                self.throttle = 0.0
-                self.d_braking = dt * self.braking_speed
-                self.braking = min(self.max_braking, self.braking + self.d_braking)
+                self.__decelerate(dt)
             elif self.gear == -1:  # reverse accelerating
-                self.d_throttle = dt * self.acceleration_speed
-                self.throttle = min(self.max_throttle, self.throttle + self.d_throttle)
-                self.d_braking = max(-self.braking, -dt * self.braking_speed)
-                self.braking = max(0.0, self.braking + self.d_braking)
+                self.__accelerate(dt)
         else:  # both down or both up
             self.d_throttle = -dt * self.dissipation_speed
             self.throttle = max(0.0, self.throttle + self.d_throttle)
             self.d_braking = -dt * self.dissipation_speed
             self.braking = max(0.0, self.braking + self.d_braking)
 
+    def __takeoff(self, dt, gear):
+        self.gear = gear
+        self.d_throttle = dt * self.acceleration_speed
+        self.throttle = 0.0
+        self.d_braking = max(-self.braking, -dt * self.braking_speed)
+        self.braking = max(0.0, self.braking + self.d_braking)
+
+    def __decelerate(self, dt):
+        self.d_throttle = 0.0
+        self.throttle = 0.0
+        self.d_braking = dt * self.braking_speed
+        self.braking = min(self.max_braking, self.braking + self.d_braking)
+
+    def __accelerate(self, dt):
+        self.d_throttle = dt * self.acceleration_speed
+        self.throttle = min(self.max_throttle, self.throttle + self.d_throttle)
+        self.d_braking = max(-self.braking, -dt * self.braking_speed)
+        self.braking = max(0.0, self.braking + self.d_braking)
+
+    def __update_direction(self):
+        # conditions to change the direction
+        if not self.up_down and not self.down_down and self.virtual_speed < 0.01:
+            self.gear = 0
+
     def diff_update_linear_movement(self, d_throttle, d_braking):
         self.throttle = min(self.max_throttle, self.throttle + d_throttle)
         self.braking = min(self.max_braking, self.braking + d_braking)
 
-    def update_direction(self):
-        # conditions to change the direction
-        if not self.up_down and not self.down_down and self.virtual_speed < 0.01:
-            self.gear = 0
+    def diff_update_steering(self, d_steering):
+        if d_steering < 0:
+            self.steering = max(-1.0, self.steering + d_steering)
+        else:
+            self.steering = min(1.0, self.steering + d_steering)
 
 
 class PygameRenderer:
