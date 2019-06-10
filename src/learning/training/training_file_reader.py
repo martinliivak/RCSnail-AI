@@ -28,8 +28,8 @@ class TrainingFileReader:
                 break
 
         cap.release()
-        # removing first image due to gear shifting for labels
-        training_images.pop(0)
+        # removing the last image due to gear shifting for labels
+        training_images.pop(-1)
         return np.array(training_images)
 
     def extract_training_telemetry(self, filename):
