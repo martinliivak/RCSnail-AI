@@ -101,22 +101,22 @@ class Car:
 
     def __takeoff(self, dt, gear):
         self.gear = gear
-        self.d_throttle = dt * self.acceleration_speed
         self.throttle = 0.0
-        self.d_braking = max(-self.braking, -dt * self.braking_speed)
+        self.d_throttle = dt * self.acceleration_speed
         self.braking = max(0.0, self.braking + self.d_braking)
+        self.d_braking = max(-self.braking, -dt * self.braking_speed)
 
     def __decelerate(self, dt):
-        self.d_throttle = 0.0
         self.throttle = 0.0
-        self.d_braking = dt * self.braking_speed
+        self.d_throttle = 0.0
         self.braking = min(self.max_braking, self.braking + self.d_braking)
+        self.d_braking = dt * self.braking_speed
 
     def __accelerate(self, dt):
-        self.d_throttle = dt * self.acceleration_speed
         self.throttle = min(self.max_throttle, self.throttle + self.d_throttle)
-        self.d_braking = max(-self.braking, -dt * self.braking_speed)
+        self.d_throttle = dt * self.acceleration_speed
         self.braking = max(0.0, self.braking + self.d_braking)
+        self.d_braking = max(-self.braking, -dt * self.braking_speed)
 
     def __update_direction(self):
         # conditions to change the direction
@@ -193,7 +193,7 @@ class PygameRenderer:
                 R = pygame.Rect(self.window_width - 20,
                                 0,
                                 10,
-                                self.window_height / 2 * self.car.throttle / self.car.max_acceleration)
+                                self.window_height / 2 * self.car.throttle / self.car.max_throttle)
                 R = R.move(0, self.window_height / 2 - R.height)
                 pygame.draw.rect(self.screen, self.green, R)
             if self.car.braking > 0.0:
@@ -207,7 +207,7 @@ class PygameRenderer:
                 R = pygame.Rect(self.window_width - 20,
                                 self.window_height / 2,
                                 10,
-                                self.window_height / 2 * self.car.throttle / self.car.max_acceleration)
+                                self.window_height / 2 * self.car.throttle / self.car.max_throttle)
                 pygame.draw.rect(self.screen, self.green, R)
             if self.car.braking > 0.0:
                 R = pygame.Rect(self.window_width - 20,
@@ -243,6 +243,7 @@ class PygameRenderer:
             last_time, current_time = current_time, time.time()
             await asyncio.sleep(1 / self.FPS - (current_time - last_time))  # tick
             await self.car.update((current_time - last_time) / 1.0)
+            print("{} {} {} {}".format(self.car.gear, self.car.steering, self.car.throttle, self.car.braking))
             await rcs.updateControl(self.car.gear, self.car.steering, self.car.throttle, self.car.braking)
             self.screen.fill(self.black)
             if isinstance(self.latest_frame, VideoFrame):
