@@ -59,12 +59,11 @@ class DataInterceptor:
 
     def update_car_from_predictions(self, car):
         if self.frame is not None and self.telemetry is not None:
-            print("predicting stuff")
             self.predicted_updates = self.model.predict(self.frame, self.telemetry)
 
             if self.predicted_updates is not None:
                 print(self.predicted_updates.d_steering)
                 car.gear = self.predicted_updates.gear
                 car.ext_update_steering(self.predicted_updates.d_steering)
-                car.throttle = 0.4
+                car.throttle = 0.5
                 car.ext_update_linear_movement(self.predicted_updates.d_throttle, self.predicted_updates.d_braking)

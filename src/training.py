@@ -32,11 +32,12 @@ def main():
     wrapped_model.create_model(concat_model)
     wrapped_model.model.summary()
 
-    wrapped_model.fit((video_train, input_train, y_train), (video_test, input_test, y_test), epochs=5, verbose=1)
-    wrapped_model.save_model(filename)
+    #wrapped_model.fit((video_train, input_train, y_train), (video_test, input_test, y_test), epochs=5, verbose=1)
+    #wrapped_model.save_model(filename)
 
     wrapped_model.load_model(filename)
-    predictions = wrapped_model.predict(video_test[0], telemetry_frame.iloc[0])
+    predictions = wrapped_model.predict(video[0], {"p": 0, "p2": 0, "c": 244593, "c2": 1560248301322, "b": 3705, "sa": 511})
+    print(predictions)
 
 
 if __name__ == "__main__":

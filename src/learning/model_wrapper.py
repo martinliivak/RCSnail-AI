@@ -46,8 +46,7 @@ class ModelWrapper:
     @staticmethod
     def __updates_from_prediction(prediction):
         prediction_values = prediction.tolist()[0]
-        print(prediction_values)
 
         # TODO normalize gear to integer values, and remove braking if it's very small
         #return CarControlDiffs(prediction_values[0], prediction_values[1], prediction_values[2], prediction_values[3])
-        return CarControlDiffs(1, prediction_values[1], 0.0, 0.0)
+        return CarControlDiffs(1, prediction_values[0], 0.0, 0.0)
