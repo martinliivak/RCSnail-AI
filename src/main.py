@@ -43,12 +43,14 @@ def main():
     training_files_path = path_to_training + get_training_file_name(path_to_training=path_to_training)
     # recorder is None or TrainingRecorder
     recorder = TrainingRecorder(training_files_path, resolution=recording_resolution)
+    recorder = None
 
     wrapped_model = ModelWrapper(path_to_models=path_to_models)
     wrapped_model.load_model("2019_06_11_test_1")
 
     interceptor = DataInterceptor(resolution=recording_resolution, recorder=recorder, model=wrapped_model)
     # update_override is None or interceptor.car_update_override
+    update_override = None
     update_override = interceptor.car_update_override
 
     car = Car(update_override=update_override)

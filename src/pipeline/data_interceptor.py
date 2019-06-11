@@ -48,6 +48,7 @@ class DataInterceptor:
     async def car_update_override(self, car):
         self.expert_updates = CarControlDiffs(car.gear, car.d_steering, car.d_throttle, car.d_braking)
         self.car_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
+
         if self.telemetry is not None:
             print("d: {}  f: {}  t: {}".format(self.expert_updates.d_steering, self.car_controls.steering, self.telemetry["sa"]))
 
