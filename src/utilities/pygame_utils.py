@@ -65,9 +65,11 @@ class Car:
             if self.steering > 0:
                 self.d_steering = -dt * self.steering_speed_neutral
                 self.steering = max(0.0, self.steering + self.d_steering)
-            else:
+            elif self.steering < 0:
                 self.d_steering = dt * self.steering_speed_neutral
                 self.steering = min(0.0, self.steering + self.d_steering)
+            else:
+                self.d_steering = 0.0
         elif self.left_down and not self.right_down:
             self.d_steering = -dt * self.steering_speed
             self.steering = max(-1.0, self.steering + self.d_steering)
