@@ -1,3 +1,4 @@
+import numpy as np
 from sklearn.model_selection import train_test_split
 
 from src.learning.model_wrapper import ModelWrapper
@@ -5,7 +6,7 @@ from src.learning.models import create_cnn, create_mlp, create_multi_model
 from src.learning.training.training_collector import TrainingCollector
 from src.learning.training.training_file_reader import TrainingFileReader
 
-filename = "2019_06_05_test_1"
+filename = "2019_06_11_test_1"
 
 
 def main():
@@ -14,6 +15,8 @@ def main():
 
     telemetry_frame = reader.extract_training_telemetry(filename + ".csv")
     video = reader.extract_training_video(filename + ".avi")
+    # TODO figure out telemetry NaN and 0 removal indexes for related video
+    video = video[video.shape[0] - telemetry_frame.shape[0]:, :]
 
     labels = collector.collect_labels(telemetry_frame)
     numeric_inputs = collector.collect_numeric_inputs(telemetry_frame)
@@ -29,8 +32,11 @@ def main():
     wrapped_model.create_model(concat_model)
     wrapped_model.model.summary()
 
-    wrapped_model.fit((video_train, input_train, y_train), (video_test, input_test, y_test), epochs=2, verbose=1)
+    wrapped_model.fit((video_train, input_train, y_train), (video_test, input_test, y_test), epochs=5, verbose=1)
     wrapped_model.save_model(filename)
+
+    wrapped_model.load_model(filename)
+    predictions = wrapped_model.predict(video_test[0], telemetry_frame.iloc[0])
 
 
 if __name__ == "__main__":
