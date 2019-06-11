@@ -38,7 +38,7 @@ class Car:
         # telemetry
         self.batVoltage_mV = 0
 
-        self.__control_override = update_override is not None
+        self.__override_enabled = update_override is not None
         self.__update_override = update_override
 
     async def update(self, dt):
@@ -46,7 +46,7 @@ class Car:
         self.__update_linear_movement(dt)
         self.__update_direction()
 
-        if self.__control_override:
+        if self.__override_enabled:
             await self.__update_override(self)
 
         # calculate virtual speed

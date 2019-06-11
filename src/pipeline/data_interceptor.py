@@ -12,7 +12,6 @@ class DataInterceptor:
 
         self.frame = None
         self.telemetry = None
-        self.expert_actions = None
         self.expert_updates = CarControlDiffs(0, 0.0, 0.0, 0.0)
         self.car_controls = CarControls(0, 0.0, 0.0, 0.0)
         self.predicted_updates = None
@@ -44,7 +43,7 @@ class DataInterceptor:
         self.training_recorder.record(self.frame, self.telemetry)
 
     def __record_state_with_expert(self):
-        self.training_recorder.record_expert(self.frame, self.telemetry, self.expert_actions)
+        self.training_recorder.record_expert(self.frame, self.telemetry, self.expert_updates)
 
     async def car_update_override(self, car):
         self.expert_updates = CarControlDiffs(car.gear, car.d_steering, car.d_throttle, car.d_braking)
@@ -66,4 +65,5 @@ class DataInterceptor:
             if self.predicted_updates is not None:
                 car.gear = self.predicted_updates.gear
                 car.ext_update_steering(self.predicted_updates.d_steering)
-                car.ext_update_linear_movement(self.predicted_updates.d_throttle, self.predicted_updates.d_braking)
+                car.throttle = 0.5
+                #car.ext_update_linear_movement(self.predicted_updates.d_throttle, self.predicted_updates.d_braking)

@@ -12,7 +12,7 @@ class TrainingCollector:
     def collect_numeric_inputs(self, telemetry_frame):
         # TODO add throttle, braking etc to inputs when full data exists
         return telemetry_frame[[
-            self.__mapping.speed,
-            self.__mapping.position,
+            #self.__mapping.speed,
+            #self.__mapping.position,
             self.__mapping.steering
         ]]

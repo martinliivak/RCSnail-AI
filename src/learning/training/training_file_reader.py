@@ -14,6 +14,7 @@ def extract_namedtuple_from_json_string(line):
 class TrainingFileReader:
     def __init__(self, path_to_training="../training/"):
         self.path_to_training = path_to_training
+        self.__mapping = CarMapping()
 
     def extract_training_video(self, filename):
         cap = cv2.VideoCapture(self.path_to_training + filename)
@@ -40,12 +41,13 @@ class TrainingFileReader:
 
         telemetry = pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0]._fields)
         control_labels = telemetry.diff()[[
-            CarMapping.steering,
-            CarMapping.throttle,
-            CarMapping.braking
+            self.__mapping.steering,
+            #self.__mapping.throttle,
+            #self.__mapping.braking
         ]]
-        gear_labels = telemetry[CarMapping.gear].shift(-1)
-        labels = control_labels.join(gear_labels).add_suffix("d_")
+        #gear_labels = telemetry[self.__mapping.gear].shift(-1)
+        #labels = control_labels.join(gear_labels).add_prefix("d_")
+        labels = control_labels.add_prefix("d_")
 
         training_df = telemetry.join(labels)
 
