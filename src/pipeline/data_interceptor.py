@@ -49,15 +49,15 @@ class DataInterceptor:
     async def car_update_override(self, car):
         self.expert_updates = CarControlDiffs(car.gear, car.d_steering, car.d_throttle, car.d_braking)
         self.car_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
-        print(self.expert_updates.d_steering)
-        print(self.car_controls.steering)
-        print(self.telemetry["sa"])
+        if self.telemetry is not None:
+            print("d: {}  f: {}  t: {}".format(self.expert_updates.d_steering, self.car_controls.steering, self.telemetry["sa"]))
 
         if self.aggregation_enabled:
             # TODO implement dagger Pi_i training here
             self.update_car_from_predictions(car)
         else:
-            self.update_car_from_predictions(car)
+            pass
+            #self.update_car_from_predictions(car)
 
     def update_car_from_predictions(self, car):
         if self.frame is not None and self.telemetry is not None:

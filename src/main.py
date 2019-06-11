@@ -44,11 +44,11 @@ def main():
     recorder = TrainingRecorder(training_files_path, resolution=recording_resolution)
 
     wrapped_model = ModelWrapper()
-    #wrapped_model.load_model("../models/whatever.h5")
+    wrapped_model.load_model("2019_06_05_test_1")
 
     interceptor = DataInterceptor(resolution=recording_resolution, recorder=recorder, model=wrapped_model)
     # update_override is None or interceptor.car_update_override
-    update_override = None
+    update_override = interceptor.car_update_override
 
     car = Car(update_override=update_override)
     renderer = PygameRenderer(screen, car)

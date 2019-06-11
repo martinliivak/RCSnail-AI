@@ -63,19 +63,19 @@ class Car:
         if (not self.left_down) and (not self.right_down):
             # free center dissipation
             if self.steering > 0:
-                self.d_steering = -dt * self.steering_speed_neutral
                 self.steering = max(0.0, self.steering + self.d_steering)
+                self.d_steering = -dt * self.steering_speed_neutral
             elif self.steering < 0:
-                self.d_steering = dt * self.steering_speed_neutral
                 self.steering = min(0.0, self.steering + self.d_steering)
+                self.d_steering = dt * self.steering_speed_neutral
             else:
                 self.d_steering = 0.0
         elif self.left_down and not self.right_down:
-            self.d_steering = -dt * self.steering_speed
             self.steering = max(-1.0, self.steering + self.d_steering)
+            self.d_steering = -dt * self.steering_speed
         elif not self.left_down and self.right_down:
-            self.d_steering = dt * self.steering_speed
             self.steering = min(1.0, self.steering + self.d_steering)
+            self.d_steering = dt * self.steering_speed
 
     def __update_linear_movement(self, dt):
         # calculating gear, throttle, braking
@@ -243,7 +243,6 @@ class PygameRenderer:
             last_time, current_time = current_time, time.time()
             await asyncio.sleep(1 / self.FPS - (current_time - last_time))  # tick
             await self.car.update((current_time - last_time) / 1.0)
-            print("{} {} {} {}".format(self.car.gear, self.car.steering, self.car.throttle, self.car.braking))
             await rcs.updateControl(self.car.gear, self.car.steering, self.car.throttle, self.car.braking)
             self.screen.fill(self.black)
             if isinstance(self.latest_frame, VideoFrame):
