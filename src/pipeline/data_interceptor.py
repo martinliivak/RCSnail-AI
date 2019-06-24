@@ -34,7 +34,6 @@ class DataInterceptor:
                 self.__record_state_with_expert()
 
     def intercept_telemetry(self, telemetry):
-        print(telemetry)
         self.telemetry = telemetry
 
     def __convert_frame(self, frame):

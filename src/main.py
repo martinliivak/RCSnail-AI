@@ -42,8 +42,8 @@ def main():
     path_to_models = "../training/models/"
     training_files_path = path_to_training + get_training_file_name(path_to_training=path_to_training)
     # recorder is None or TrainingRecorder
-    recorder = TrainingRecorder(training_files_path, resolution=recording_resolution)
     recorder = None
+    recorder = TrainingRecorder(training_files_path, resolution=recording_resolution)
 
     wrapped_model = ModelWrapper(path_to_models=path_to_models)
     wrapped_model.load_model("2019_06_11_test_1")
