@@ -50,8 +50,8 @@ def main():
 
     interceptor = DataInterceptor(resolution=recording_resolution, recorder=recorder, model=wrapped_model)
     # update_override is None or interceptor.car_update_override
-    update_override = None
     update_override = interceptor.car_update_override
+    update_override = None
 
     car = Car(update_override=update_override)
     renderer = PygameRenderer(screen, car)

@@ -35,10 +35,7 @@ class ModelWrapper:
 
     def predict(self, frame, telemetry):
         steering = float(telemetry[self.__mapping.steering])
-        # temp norming
-        norm_steering = (steering - 511) / 225
-        # end temp
-        numeric_inputs = np.array([norm_steering])
+        numeric_inputs = np.array([steering])
         predictions = self.model.predict([numeric_inputs, frame[np.newaxis, :]])
 
         return self.__updates_from_prediction(predictions)

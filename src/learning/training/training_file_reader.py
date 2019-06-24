@@ -41,11 +41,8 @@ class TrainingFileReader:
 
         telemetry = pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0]._fields)
 
-        # temp norming steering
-        df = telemetry.drop(telemetry[telemetry["sa"] < 300].index)
-        df["sa"] = (df["sa"] - 511) / 225
-        telemetry = df
-        # end temp steering norm
+        # TODO possibly drop erroneous inputs from start of connection
+        #df = telemetry.drop(telemetry[telemetry["sa"] < 300].index)
 
         control_labels = telemetry.diff()[[
             self.__mapping.steering,
