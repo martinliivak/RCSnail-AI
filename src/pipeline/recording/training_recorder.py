@@ -1,5 +1,6 @@
 import cv2
 import json
+import datetime
 
 
 class TrainingRecorder:
@@ -14,6 +15,7 @@ class TrainingRecorder:
 
     def record(self, frame, telemetry):
         self.session_frames.append(frame)
+        telemetry.put("now", datetime.datetime.now().timestamp())
         self.session_telemetry.append(telemetry)
 
     def record_expert(self, frame, telemetry, expert_actions):

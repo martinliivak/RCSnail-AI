@@ -170,6 +170,7 @@ class PygameRenderer:
             event = await event_queue.get()
             if event.type == pygame.QUIT:
                 print("event", event)
+                asyncio.get_event_loop().stop()
                 break
             elif event.type == pygame.KEYDOWN or event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT:
@@ -183,7 +184,7 @@ class PygameRenderer:
             # print("event", event)
         asyncio.get_event_loop().stop()
 
-    def draw(self):
+    async def draw(self):
         # Steering gauge:
         if self.car.steering < 0:
             R = pygame.Rect((self.car.steering + 1.0) / 2.0 * self.window_width,
@@ -262,18 +263,8 @@ class PygameRenderer:
                     ovl.set_location(pygame.Rect(0, 0, self.window_width - 20, self.window_height - 10))
                 ovl.display((self.latest_frame.planes[0], self.latest_frame.planes[1], self.latest_frame.planes[2]))
 
-                # check different frame formats https://docs.mikeboers.com/pyav/develop/api/video.html
-                # PIL or Pillow must be installed:
-                #image_pil = latest_frame.to_image()
-                #screen.blit(image_pil, (0, 0))
-                # Numpy must be installed:
-                #image_to_ndarray = latest_frame.to_ndarray()
-
-                #image_rgb = latest_frame.to_rgb()
-                #screen.blit(image_rgb, (0, 0))
-            self.draw()
+            await self.draw()
             pygame.display.flip()
-        asyncio.get_event_loop().stop()
 
     def handle_new_frame(self, frame):
         self.latest_frame = frame
