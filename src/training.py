@@ -8,7 +8,7 @@ from src.learning.models import create_cnn, create_mlp, create_multi_model
 from src.learning.training.training_collector import TrainingCollector
 from src.learning.training.training_file_reader import TrainingFileReader
 
-filename = "2019_06_24_test_5"
+filename = "2019_06_28_test_2"
 
 
 def main():
@@ -24,12 +24,8 @@ def main():
     numeric_inputs = collector.collect_numeric_inputs(telemetry_frame)
 
     # temp graphing telemetry lags
-    #telemetry_frame = telemetry_frame[telemetry_frame["c"] > 1561374800000]
-    stuff = pd.concat([telemetry_frame["c2"], telemetry_frame.diff()["c2"]], axis=1)
-    stuff.columns = ["timestamps", "diffs"]
-    print(stuff.to_string())
-    stuff["diffs"].plot()
-    plt.show()
+    analyze_time_diffs_in_series(telemetry_frame)
+    analyze_time_diffs_between_series(telemetry_frame)
 
     mlp = create_mlp(input_dim=numeric_inputs.shape[1], regress=False)
     cnn = create_cnn(input_shape=video.shape[1:], regress=False)
@@ -39,6 +35,24 @@ def main():
         video, numeric_inputs, labels, test_size=0.2)
 
     #create_model(concat_model, input_test, input_train, video, video_test, video_train, y_test, y_train)
+
+
+def analyze_time_diffs_in_series(telemetry_frame):
+    time_c2 = pd.concat([telemetry_frame["c2"], telemetry_frame.diff()["c2"]], axis=1)
+    time_c2.columns = ["timestamps", "diffs"]
+    time_c2["diffs"].plot(title="c2 times")
+    plt.show()
+
+    time_client = pd.concat([telemetry_frame["now"], telemetry_frame.diff()["now"]], axis=1)
+    time_client.columns = ["timestamps", "diffs"]
+    time_client["diffs"].plot(title="client times")
+    plt.show()
+
+
+def analyze_time_diffs_between_series(telemetry_frame):
+    stuff = telemetry_frame["now"] * 1000 - telemetry_frame["c2"]
+    stuff.plot(title="diffs")
+    plt.show()
 
 
 def create_model(concat_model, input_test, input_train, video, video_test, video_train, y_test, y_train):
