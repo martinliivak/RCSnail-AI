@@ -14,9 +14,10 @@ class TrainingRecorder:
         self.session_expert_actions = []
 
     def record(self, frame, telemetry):
-        self.session_frames.append(frame)
-        telemetry.put("now", datetime.datetime.now().timestamp())
-        self.session_telemetry.append(telemetry)
+        if telemetry is not None and frame is not None:
+            self.session_frames.append(frame)
+            telemetry["now"] = datetime.datetime.now().timestamp()
+            self.session_telemetry.append(telemetry)
 
     def record_expert(self, frame, telemetry, expert_actions):
         self.session_frames.append(frame)

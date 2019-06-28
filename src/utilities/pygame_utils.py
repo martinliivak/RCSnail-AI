@@ -170,7 +170,6 @@ class PygameRenderer:
             event = await event_queue.get()
             if event.type == pygame.QUIT:
                 print("event", event)
-                asyncio.get_event_loop().stop()
                 break
             elif event.type == pygame.KEYDOWN or event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT:
