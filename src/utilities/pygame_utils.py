@@ -1,6 +1,8 @@
 import asyncio
 import time
 import pygame
+
+from concurrent.futures import ThreadPoolExecutor
 from av import VideoFrame
 
 
@@ -256,14 +258,19 @@ class PygameRenderer:
             await rcs.updateControl(self.car.gear, self.car.steering, self.car.throttle, self.car.braking)
             self.screen.fill(self.black)
             if isinstance(self.latest_frame, VideoFrame):
-                if frame_size[0] != self.latest_frame.width or frame_size[1] != self.latest_frame.height:
-                    frame_size = (self.latest_frame.width, self.latest_frame.height)
-                    ovl = pygame.Overlay(pygame.YV12_OVERLAY, frame_size) # (320, 240))
-                    ovl.set_location(pygame.Rect(0, 0, self.window_width - 20, self.window_height - 10))
-                ovl.display((self.latest_frame.planes[0], self.latest_frame.planes[1], self.latest_frame.planes[2]))
+                executor = ThreadPoolExecutor(max_workers=1)
+                loop = asyncio.get_event_loop()
+                await loop.run_in_executor(executor, self.render_overlay, frame_size, ovl)
 
             await self.draw()
             pygame.display.flip()
+
+    def render_overlay(self, frame_size, ovl):
+        if frame_size[0] != self.latest_frame.width or frame_size[1] != self.latest_frame.height:
+            frame_size = (self.latest_frame.width, self.latest_frame.height)
+            ovl = pygame.Overlay(pygame.YV12_OVERLAY, frame_size)  # (320, 240))
+            ovl.set_location(pygame.Rect(0, 0, self.window_width - 20, self.window_height - 10))
+        ovl.display((self.latest_frame.planes[0], self.latest_frame.planes[1], self.latest_frame.planes[2]))
 
     def handle_new_frame(self, frame):
         self.latest_frame = frame

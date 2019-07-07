@@ -1,9 +1,11 @@
+import asyncio
 import numpy as np
+from concurrent.futures import ThreadPoolExecutor
 
 from src.utilities.car_controls import CarControls, CarControlDiffs
 
 
-class DataInterceptor:
+class Interceptor:
     def __init__(self, resolution=(60, 40), model=None, recorder=None, aggregated_recording=False):
         self.renderer = None
         self.training_recorder = recorder
@@ -22,7 +24,7 @@ class DataInterceptor:
     def set_renderer(self, renderer):
         self.renderer = renderer
 
-    def intercept_frame(self, frame):
+    async def intercept_frame(self, frame):
         self.renderer.handle_new_frame(frame)
 
         if frame is not None:
@@ -33,7 +35,7 @@ class DataInterceptor:
             elif self.aggregation_enabled:
                 self.__record_state_with_expert()
 
-    def intercept_telemetry(self, telemetry):
+    async def intercept_telemetry(self, telemetry):
         self.telemetry = telemetry
 
     def __convert_frame(self, frame):
@@ -54,11 +56,16 @@ class DataInterceptor:
 
         if self.aggregation_enabled:
             # TODO implement dagger Pi_i training here
-            self.update_car_from_predictions(car)
+            await self.__update_car_in_executor(car)
         else:
-            self.update_car_from_predictions(car)
+            await self.__update_car_in_executor(car)
 
-    def update_car_from_predictions(self, car):
+    async def __update_car_in_executor(self, car):
+        executor = ThreadPoolExecutor(max_workers=3)
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(executor, self.__update_car_from_predictions, car)
+
+    def __update_car_from_predictions(self, car):
         if self.frame is not None and self.telemetry is not None:
             self.predicted_updates = self.model.predict(self.frame, self.telemetry)
 

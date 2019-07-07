@@ -6,9 +6,9 @@ import logging
 from rcsnail import RCSnail
 
 from src.learning.model_wrapper import ModelWrapper
-from src.pipeline.recording.training_recorder import TrainingRecorder
+from src.pipeline.recording.recorder import Recorder
 from src.utilities.pygame_utils import Car, PygameRenderer
-from src.pipeline.data_interceptor import DataInterceptor
+from src.pipeline.interceptor import Interceptor
 
 window_width = 960
 window_height = 480
@@ -41,14 +41,14 @@ def main():
     path_to_training = "../training/"
     path_to_models = "../training/models/"
     training_files_path = path_to_training + get_training_file_name(path_to_training=path_to_training)
-    # recorder is None or TrainingRecorder
+    # recorder is None or Recorder
     recorder = None
-    recorder = TrainingRecorder(training_files_path, resolution=recording_resolution)
+    recorder = Recorder(training_files_path, resolution=recording_resolution)
 
     wrapped_model = ModelWrapper(path_to_models=path_to_models)
     wrapped_model.load_model("2019_06_11_test_1")
 
-    interceptor = DataInterceptor(resolution=recording_resolution, recorder=recorder, model=wrapped_model)
+    interceptor = Interceptor(resolution=recording_resolution, recorder=recorder, model=wrapped_model)
     # update_override is None or interceptor.car_update_override
     update_override = interceptor.car_update_override
     update_override = None

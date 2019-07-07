@@ -3,7 +3,7 @@ import json
 import datetime
 
 
-class TrainingRecorder:
+class Recorder:
     def __init__(self, training_session, resolution=(60, 40), fps=20.0):
         self.training_session = training_session
         self.resolution = resolution
