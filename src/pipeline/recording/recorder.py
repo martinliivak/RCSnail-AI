@@ -24,6 +24,9 @@ class Recorder:
         self.session_telemetry.append(telemetry)
         self.session_expert_actions.append(expert_actions)
 
+    def get_current_data(self):
+        return self.session_frames, self.session_telemetry, self.session_expert_actions
+
     def save_session(self):
         session_length = len(self.session_telemetry)
         assert session_length == len(self.session_frames), "Video and telemetry sizes are not identical"

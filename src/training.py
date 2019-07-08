@@ -7,6 +7,7 @@ from src.learning.model_wrapper import ModelWrapper
 from src.learning.models import create_cnn, create_mlp, create_multi_model
 from src.learning.training.training_collector import TrainingCollector
 from src.learning.training.training_file_reader import TrainingFileReader
+from src.learning.training.training_transformer import TrainingTransformer
 
 filename = "2019_06_28_test_2"
 
@@ -14,18 +15,20 @@ filename = "2019_06_28_test_2"
 def main():
     reader = TrainingFileReader()
     collector = TrainingCollector()
+    transformer = TrainingTransformer()
 
-    telemetry_frame = reader.extract_training_telemetry(filename + ".csv")
-    video = reader.extract_training_video(filename + ".avi")
+    raw_df = reader.read_training_telemetry(filename + ".csv")
+    telemetry_df = transformer.get_training_df(raw_df)
+    video = reader.read_training_video(filename + ".avi")
     # TODO figure out telemetry NaN and 0 removal indexes for related video
-    video = video[video.shape[0] - telemetry_frame.shape[0]:, :]
+    video = video[video.shape[0] - telemetry_df.shape[0]:, :]
 
-    labels = collector.collect_labels(telemetry_frame)
-    numeric_inputs = collector.collect_numeric_inputs(telemetry_frame)
+    labels = collector.collect_labels(telemetry_df)
+    numeric_inputs = collector.collect_numeric_inputs(telemetry_df)
 
     # temp graphing telemetry lags
-    analyze_time_diffs_in_series(telemetry_frame)
-    analyze_time_diffs_between_series(telemetry_frame)
+    analyze_time_diffs_in_series(telemetry_df)
+    analyze_time_diffs_between_series(telemetry_df)
 
     mlp = create_mlp(input_dim=numeric_inputs.shape[1], regress=False)
     cnn = create_cnn(input_shape=video.shape[1:], regress=False)

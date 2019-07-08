@@ -2,13 +2,14 @@ import asyncio
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 
+from src.learning.training.training_transformer import TrainingTransformer
 from src.utilities.car_controls import CarControls, CarControlDiffs
 
 
 class Interceptor:
     def __init__(self, resolution=(60, 40), model=None, recorder=None, aggregated_recording=False):
         self.renderer = None
-        self.training_recorder = recorder
+        self.recorder = recorder
         self.resolution = resolution
         self.model = model
 
@@ -18,8 +19,10 @@ class Interceptor:
         self.car_controls = CarControls(0, 0.0, 0.0, 0.0)
         self.predicted_updates = None
 
-        self.recording_enabled = self.training_recorder is not None and not aggregated_recording
-        self.aggregation_enabled = self.training_recorder is not None and aggregated_recording
+        self.transformer = TrainingTransformer()
+        self.recording_enabled = self.recorder is not None and not aggregated_recording
+        self.aggregation_enabled = self.recorder is not None and aggregated_recording
+        self.aggregation_count = 0
 
     def set_renderer(self, renderer):
         self.renderer = renderer
@@ -29,6 +32,7 @@ class Interceptor:
 
         if frame is not None:
             self.frame = self.__convert_frame(frame)
+            self.aggregation_count += 1
 
             if self.recording_enabled:
                 self.__record_state()
@@ -42,10 +46,10 @@ class Interceptor:
         return np.array(frame.to_image().resize(self.resolution))
 
     def __record_state(self):
-        self.training_recorder.record(self.frame, self.telemetry)
+        self.recorder.record(self.frame, self.telemetry)
 
     def __record_state_with_expert(self):
-        self.training_recorder.record_expert(self.frame, self.telemetry, self.expert_updates)
+        self.recorder.record_expert(self.frame, self.telemetry, self.expert_updates)
 
     async def car_update_override(self, car):
         self.expert_updates = CarControlDiffs(car.gear, car.d_steering, car.d_throttle, car.d_braking)
@@ -54,8 +58,13 @@ class Interceptor:
         if self.telemetry is not None:
             print("d: {}  f: {}  t: {}".format(self.expert_updates.d_steering, self.car_controls.steering, self.telemetry["sa"]))
 
-        if self.aggregation_enabled:
+        if self.aggregation_enabled and (self.aggregation_count % 10000 == 0):
             # TODO implement dagger Pi_i training here
+
+            self.transformer.transform_aggregation(*self.recorder.get_current_data())
+            # use the data to fit a new model
+            # overwrite self.model = new_model
+            # use it to predict
             await self.__update_car_in_executor(car)
         else:
             await self.__update_car_in_executor(car)
