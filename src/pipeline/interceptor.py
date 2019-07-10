@@ -24,7 +24,7 @@ class Interceptor:
     def set_renderer(self, renderer):
         self.renderer = renderer
 
-    async def intercept_frame(self, frame):
+    def intercept_frame(self, frame):
         self.renderer.handle_new_frame(frame)
 
         if frame is not None:
@@ -35,7 +35,7 @@ class Interceptor:
             elif self.aggregation_enabled:
                 self.__record_state_with_expert()
 
-    async def intercept_telemetry(self, telemetry):
+    def intercept_telemetry(self, telemetry):
         self.telemetry = telemetry
 
     def __convert_frame(self, frame):
