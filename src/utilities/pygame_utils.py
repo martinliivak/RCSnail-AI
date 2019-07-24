@@ -1,6 +1,8 @@
 import asyncio
 import time
 import pygame
+
+from concurrent.futures import ThreadPoolExecutor
 from av import VideoFrame
 
 
@@ -11,16 +13,20 @@ class Car:
         self.throttle = 0.0
         self.braking = 0.0
         self.gear = 0
+        self.d_steering = 0.0
+        self.d_throttle = 0.0
+        self.d_braking = 0.0
+
         self.max_steering = 1.0
-        self.max_acceleration = 1.0
+        self.max_throttle = 1.0
         self.max_braking = 1.0
         self.braking_k = 5.0            # coefficient used for virtual speed braking calc
         self.min_deceleration = 5       # speed reduction when nothing is pressed
         # units of change over one second:
         self.steering_speed = 5.0
-        self.steering_speed_neutral = 3.0
+        self.steering_dissipation_speed = 3.0
         self.acceleration_speed = 5.0
-        self.deceleration_speed = 2.0
+        self.dissipation_speed = 2.0
         self.braking_speed = 5.0
         # virtual speed
         self.virtual_speed = 0.0
@@ -34,15 +40,15 @@ class Car:
         # telemetry
         self.batVoltage_mV = 0
 
-        self.__control_override = update_override is not None
+        self.__override_enabled = update_override is not None
         self.__update_override = update_override
 
     async def update(self, dt):
-        self.update_steering(dt)
-        self.update_linear_movement(dt)
-        self.update_direction()
+        self.__update_steering(dt)
+        self.__update_linear_movement(dt)
+        self.__update_direction()
 
-        if self.__control_override:
+        if self.__override_enabled:
             await self.__update_override(self)
 
         # calculate virtual speed
@@ -54,49 +60,90 @@ class Car:
             self.virtual_speed = max(0.0, min(self.max_virtual_speed,
                                               self.virtual_speed + dt * (self.throttle - self.braking_k * self.braking)))
 
-    def update_steering(self, dt):
+    def __update_steering(self, dt):
         # calculate steering
         if (not self.left_down) and (not self.right_down):
-            # free center positioning
-            if self.steering > 0:
-                self.steering = max(0.0, self.steering - dt * self.steering_speed_neutral)
-            else:
-                self.steering = min(0.0, self.steering + dt * self.steering_speed_neutral)
+            self.__passive_steering(dt)
         elif self.left_down and not self.right_down:
-            self.steering = max(-1.0, self.steering - dt * self.steering_speed)
+            self.d_steering = -dt * self.steering_speed
+            if not self.__override_enabled:
+                self.steering = max(-1.0, self.steering + self.d_steering)
         elif not self.left_down and self.right_down:
-            self.steering = min(1.0, self.steering + dt * self.steering_speed)
+            self.d_steering = dt * self.steering_speed
+            if not self.__override_enabled:
+                self.steering = min(1.0, self.steering + self.d_steering)
 
-    def update_linear_movement(self, dt):
+    def __passive_steering(self, dt):
+        if self.steering > 0.01:
+            self.d_steering = -dt * self.steering_dissipation_speed
+            if not self.__override_enabled:
+                self.steering = max(0.0, self.steering + self.d_steering)
+        elif self.steering < -0.01:
+            self.d_steering = dt * self.steering_dissipation_speed
+            if not self.__override_enabled:
+                self.steering = min(0.0, self.steering + self.d_steering)
+        else:
+            self.d_steering = 0.0
+
+    def __update_linear_movement(self, dt):
         # calculating gear, throttle, braking
         if self.up_down and not self.down_down:
             if self.gear == 0:
-                self.gear = 1
-                self.throttle = 0.0
+                self.__takeoff(dt, 1)
             if self.gear == 1:  # drive accelerating
-                self.throttle = min(self.max_acceleration, self.throttle + dt * self.acceleration_speed)
-                self.braking = 0.0
+                self.__accelerate(dt)
             elif self.gear == -1:  # reverse braking
-                self.braking = min(self.max_braking, self.braking + dt * self.braking_speed)
-                self.throttle = 0.0
+                self.__decelerate(dt)
         elif not self.up_down and self.down_down:
             if self.gear == 0:
-                self.gear = -1
-                self.throttle = 0.0
+                self.__takeoff(dt, -1)
             if self.gear == 1:  # drive braking
-                self.braking = min(self.max_braking, self.braking + dt * self.braking_speed)
-                self.throttle = 0.0
+                self.__decelerate(dt)
             elif self.gear == -1:  # reverse accelerating
-                self.throttle = min(self.max_acceleration, self.throttle + dt * self.acceleration_speed)
-                self.braking = 0.0
+                self.__accelerate(dt)
         else:  # both down or both up
-            self.throttle = max(0.0, self.throttle - dt * self.deceleration_speed)
-            self.braking = max(0.0, self.braking - dt * self.deceleration_speed)
+            self.d_throttle = -dt * self.dissipation_speed
+            self.d_braking = -dt * self.dissipation_speed
+            if not self.__override_enabled:
+                self.throttle = max(0.0, self.throttle + self.d_throttle)
+                self.braking = max(0.0, self.braking + self.d_braking)
 
-    def update_direction(self):
+    def __takeoff(self, dt, gear):
+        self.d_throttle = dt * self.acceleration_speed
+        self.d_braking = max(-self.braking, -dt * self.braking_speed)
+        if not self.__override_enabled:
+            self.gear = gear
+            self.throttle = 0.0
+            self.braking = max(0.0, self.braking + self.d_braking)
+
+    def __decelerate(self, dt):
+        self.d_throttle = 0.0
+        self.d_braking = dt * self.braking_speed
+        if not self.__override_enabled:
+            self.throttle = 0.0
+            self.braking = min(self.max_braking, self.braking + self.d_braking)
+
+    def __accelerate(self, dt):
+        self.d_throttle = dt * self.acceleration_speed
+        self.d_braking = max(-self.braking, -dt * self.braking_speed)
+        if not self.__override_enabled:
+            self.throttle = min(self.max_throttle, self.throttle + self.d_throttle)
+            self.braking = max(0.0, self.braking + self.d_braking)
+
+    def __update_direction(self):
         # conditions to change the direction
-        if not self.up_down and not self.down_down and self.virtual_speed < 0.01:
+        if not self.up_down and not self.down_down and self.virtual_speed < 0.01 and not self.__override_enabled:
             self.gear = 0
+
+    def ext_update_linear_movement(self, d_throttle, d_braking):
+        self.throttle = min(self.max_throttle, self.throttle + d_throttle)
+        self.braking = min(self.max_braking, self.braking + d_braking)
+
+    def ext_update_steering(self, d_steering):
+        if d_steering < 0:
+            self.steering = max(-1.0, self.steering + d_steering)
+        else:
+            self.steering = min(1.0, self.steering + d_steering)
 
 
 class PygameRenderer:
@@ -138,7 +185,7 @@ class PygameRenderer:
             # print("event", event)
         asyncio.get_event_loop().stop()
 
-    def draw(self):
+    async def draw(self):
         # Steering gauge:
         if self.car.steering < 0:
             R = pygame.Rect((self.car.steering + 1.0) / 2.0 * self.window_width,
@@ -158,7 +205,7 @@ class PygameRenderer:
                 R = pygame.Rect(self.window_width - 20,
                                 0,
                                 10,
-                                self.window_height / 2 * self.car.throttle / self.car.max_acceleration)
+                                self.window_height / 2 * self.car.throttle / self.car.max_throttle)
                 R = R.move(0, self.window_height / 2 - R.height)
                 pygame.draw.rect(self.screen, self.green, R)
             if self.car.braking > 0.0:
@@ -172,7 +219,7 @@ class PygameRenderer:
                 R = pygame.Rect(self.window_width - 20,
                                 self.window_height / 2,
                                 10,
-                                self.window_height / 2 * self.car.throttle / self.car.max_acceleration)
+                                self.window_height / 2 * self.car.throttle / self.car.max_throttle)
                 pygame.draw.rect(self.screen, self.green, R)
             if self.car.braking > 0.0:
                 R = pygame.Rect(self.window_width - 20,
@@ -211,24 +258,19 @@ class PygameRenderer:
             await rcs.updateControl(self.car.gear, self.car.steering, self.car.throttle, self.car.braking)
             self.screen.fill(self.black)
             if isinstance(self.latest_frame, VideoFrame):
-                if frame_size[0] != self.latest_frame.width or frame_size[1] != self.latest_frame.height:
-                    frame_size = (self.latest_frame.width, self.latest_frame.height)
-                    ovl = pygame.Overlay(pygame.YV12_OVERLAY, frame_size) # (320, 240))
-                    ovl.set_location(pygame.Rect(0, 0, self.window_width - 20, self.window_height - 10))
-                ovl.display((self.latest_frame.planes[0], self.latest_frame.planes[1], self.latest_frame.planes[2]))
+                executor = ThreadPoolExecutor(max_workers=16)
+                loop = asyncio.get_event_loop()
+                await loop.run_in_executor(executor, self.render_overlay, frame_size, ovl)
 
-                # check different frame formats https://docs.mikeboers.com/pyav/develop/api/video.html
-                # PIL or Pillow must be installed:
-                #image_pil = latest_frame.to_image()
-                #screen.blit(image_pil, (0, 0))
-                # Numpy must be installed:
-                #image_to_ndarray = latest_frame.to_ndarray()
-
-                #image_rgb = latest_frame.to_rgb()
-                #screen.blit(image_rgb, (0, 0))
-            self.draw()
+            await self.draw()
             pygame.display.flip()
-        asyncio.get_event_loop().stop()
+
+    def render_overlay(self, frame_size, ovl):
+        if frame_size[0] != self.latest_frame.width or frame_size[1] != self.latest_frame.height:
+            frame_size = (self.latest_frame.width, self.latest_frame.height)
+            ovl = pygame.Overlay(pygame.YV12_OVERLAY, frame_size)  # (320, 240))
+            ovl.set_location(pygame.Rect(0, 0, self.window_width - 20, self.window_height - 10))
+        ovl.display((self.latest_frame.planes[0], self.latest_frame.planes[1], self.latest_frame.planes[2]))
 
     def handle_new_frame(self, frame):
         self.latest_frame = frame

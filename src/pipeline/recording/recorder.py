@@ -1,8 +1,9 @@
 import cv2
 import json
+import datetime
 
 
-class TrainingRecorder:
+class Recorder:
     def __init__(self, training_session, resolution=(60, 40), fps=20.0):
         self.training_session = training_session
         self.resolution = resolution
@@ -10,10 +11,18 @@ class TrainingRecorder:
 
         self.session_frames = []
         self.session_telemetry = []
+        self.session_expert_actions = []
 
     def record(self, frame, telemetry):
+        if telemetry is not None and frame is not None:
+            self.session_frames.append(frame)
+            telemetry["now"] = datetime.datetime.now().timestamp()
+            self.session_telemetry.append(telemetry)
+
+    def record_expert(self, frame, telemetry, expert_actions):
         self.session_frames.append(frame)
         self.session_telemetry.append(telemetry)
+        self.session_expert_actions.append(expert_actions)
 
     def save_session(self):
         session_length = len(self.session_telemetry)

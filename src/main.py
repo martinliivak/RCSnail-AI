@@ -1,14 +1,16 @@
 import os
 import datetime
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
 import pygame
 import logging
 from rcsnail import RCSnail
 
 from src.learning.model_wrapper import ModelWrapper
-from src.pipeline.recording.training_recorder import TrainingRecorder
+from src.pipeline.recording.recorder import Recorder
 from src.utilities.pygame_utils import Car, PygameRenderer
-from src.pipeline.data_interceptor import DataInterceptor
+from src.pipeline.interceptor import Interceptor
 
 window_width = 960
 window_height = 480
@@ -39,22 +41,26 @@ def main():
     # TODO refactor this into a separate configuration manager
     recording_resolution = (60, 40)
     path_to_training = "../training/"
+    path_to_models = "../training/models/"
     training_files_path = path_to_training + get_training_file_name(path_to_training=path_to_training)
-    # recorder is None or TrainingRecorder
-    recorder = TrainingRecorder(training_files_path, resolution=recording_resolution)
+    # recorder is None or Recorder
+    recorder = None
+    recorder = Recorder(training_files_path, resolution=recording_resolution)
 
-    wrapped_model = ModelWrapper()
-    #wrapped_model.load_model("../models/whatever.h5")
+    wrapped_model = ModelWrapper(path_to_models=path_to_models)
+    wrapped_model.load_model("2019_06_11_test_1")
 
-    interceptor = DataInterceptor(resolution=recording_resolution, recorder=recorder, model=wrapped_model)
+    interceptor = Interceptor(resolution=recording_resolution, recorder=recorder, model=wrapped_model)
     # update_override is None or interceptor.car_update_override
+    update_override = interceptor.car_update_override
     update_override = None
 
     car = Car(update_override=update_override)
     renderer = PygameRenderer(screen, car)
     interceptor.set_renderer(renderer)
 
-    pygame_task = loop.run_in_executor(None, renderer.pygame_event_loop, loop, pygame_event_queue)
+    executor = ThreadPoolExecutor(max_workers=32)
+    pygame_task = loop.run_in_executor(executor, renderer.pygame_event_loop, loop, pygame_event_queue)
     render_task = asyncio.ensure_future(renderer.render(rcs))
     event_task = asyncio.ensure_future(renderer.register_pygame_events(pygame_event_queue))
     queue_task = asyncio.ensure_future(rcs.enqueue(loop, interceptor.intercept_frame, interceptor.intercept_telemetry))
