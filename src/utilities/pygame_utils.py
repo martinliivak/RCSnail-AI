@@ -258,7 +258,7 @@ class PygameRenderer:
             await rcs.updateControl(self.car.gear, self.car.steering, self.car.throttle, self.car.braking)
             self.screen.fill(self.black)
             if isinstance(self.latest_frame, VideoFrame):
-                executor = ThreadPoolExecutor(max_workers=1)
+                executor = ThreadPoolExecutor(max_workers=16)
                 loop = asyncio.get_event_loop()
                 await loop.run_in_executor(executor, self.render_overlay, frame_size, ovl)
 

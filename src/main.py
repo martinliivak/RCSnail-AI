@@ -1,6 +1,8 @@
 import os
 import datetime
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
 import pygame
 import logging
 from rcsnail import RCSnail
@@ -57,7 +59,8 @@ def main():
     renderer = PygameRenderer(screen, car)
     interceptor.set_renderer(renderer)
 
-    pygame_task = loop.run_in_executor(None, renderer.pygame_event_loop, loop, pygame_event_queue)
+    executor = ThreadPoolExecutor(max_workers=32)
+    pygame_task = loop.run_in_executor(executor, renderer.pygame_event_loop, loop, pygame_event_queue)
     render_task = asyncio.ensure_future(renderer.render(rcs))
     event_task = asyncio.ensure_future(renderer.register_pygame_events(pygame_event_queue))
     queue_task = asyncio.ensure_future(rcs.enqueue(loop, interceptor.intercept_frame, interceptor.intercept_telemetry))
