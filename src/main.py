@@ -50,7 +50,7 @@ def main():
     wrapped_model = ModelWrapper(path_to_models=path_to_models)
     wrapped_model.load_model("2019_06_11_test_1")
 
-    interceptor = Interceptor(resolution=recording_resolution, recorder=recorder, model=wrapped_model)
+    interceptor = Interceptor(resolution=recording_resolution, model=wrapped_model, recorder=recorder, aggregated_recording=True)
     # update_override is None or interceptor.car_update_override
     update_override = interceptor.car_update_override
     update_override = None

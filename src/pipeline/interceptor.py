@@ -55,19 +55,22 @@ class Interceptor:
         self.expert_updates = CarControlDiffs(car.gear, car.d_steering, car.d_throttle, car.d_braking)
         self.car_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
 
+        # temp logging
         if self.telemetry is not None:
             print("d: {}  f: {}  t: {}".format(self.expert_updates.d_steering, self.car_controls.steering, self.telemetry["sa"]))
 
-        if self.aggregation_enabled and (self.aggregation_count % 10000 == 0):
-            # TODO implement dagger Pi_i training here
+        if self.aggregation_enabled and (self.aggregation_count % 100 == 0):
+            train, test = self.transformer.transform_aggregation_into_trainables(*self.recorder.get_current_data())
+            # TODO better naming convention for models
+            self.model.save_model("stuff " + str(self.aggregation_count))
+            await self.__train_in_executor(train, test)
 
-            self.transformer.transform_aggregation(*self.recorder.get_current_data())
-            # use the data to fit a new model
-            # overwrite self.model = new_model
-            # use it to predict
-            await self.__update_car_in_executor(car)
-        else:
-            await self.__update_car_in_executor(car)
+        await self.__update_car_in_executor(car)
+
+    async def __train_in_executor(self, train_tuple, test_tuple):
+        executor = ThreadPoolExecutor(max_workers=8)
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(executor, self.model.fit, train_tuple, test_tuple)
 
     async def __update_car_in_executor(self, car):
         executor = ThreadPoolExecutor(max_workers=3)

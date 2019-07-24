@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 
 from src.learning.model_wrapper import ModelWrapper
 from src.learning.models import create_cnn, create_mlp, create_multi_model
-from src.learning.training.training_collector import TrainingCollector
+from src.learning.training.label_collector import LabelCollector
 from src.learning.training.training_file_reader import TrainingFileReader
 from src.learning.training.training_transformer import TrainingTransformer
 
@@ -14,11 +14,11 @@ filename = "2019_06_28_test_2"
 
 def main():
     reader = TrainingFileReader()
-    collector = TrainingCollector()
+    collector = LabelCollector()
     transformer = TrainingTransformer()
 
     raw_df = reader.read_training_telemetry(filename + ".csv")
-    telemetry_df = transformer.get_training_df(raw_df)
+    telemetry_df = transformer.transform_training_from_saved_df(raw_df)
     video = reader.read_training_video(filename + ".avi")
     # TODO figure out telemetry NaN and 0 removal indexes for related video
     video = video[video.shape[0] - telemetry_df.shape[0]:, :]
