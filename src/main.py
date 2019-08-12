@@ -1,4 +1,5 @@
 import os
+import sys
 import datetime
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
@@ -9,6 +10,7 @@ from rcsnail import RCSnail
 
 from src.learning.model_wrapper import ModelWrapper
 from src.pipeline.recording.recorder import Recorder
+from src.utilities.configuration_manager import ConfigurationManager
 from src.utilities.pygame_utils import Car, PygameRenderer
 from src.pipeline.interceptor import Interceptor
 
@@ -28,6 +30,10 @@ def main():
     logging.basicConfig(level=logging.WARNING, format='%(asctime)s %(message)s')
     username = os.getenv('RCS_USERNAME', '')
     password = os.getenv('RCS_PASSWORD', '')
+
+    config_manager = ConfigurationManager(sys.argv)
+    config = config_manager.config
+    print(config.stuff)
 
     rcs = RCSnail()
     rcs.sign_in_with_email_and_password(username, password)
