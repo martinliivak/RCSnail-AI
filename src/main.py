@@ -14,9 +14,6 @@ from src.utilities.configuration_manager import ConfigurationManager
 from src.utilities.pygame_utils import Car, PygameRenderer
 from src.pipeline.interceptor import Interceptor
 
-window_width = 960
-window_height = 480
-
 
 def get_training_file_name(path_to_training):
     date = datetime.datetime.today().strftime("%Y_%m_%d")
@@ -37,10 +34,10 @@ def main():
     pygame_event_queue = asyncio.Queue()
     pygame.init()
     pygame.display.set_caption("RCSnail API manual drive demo")
-    screen = pygame.display.set_mode((window_width, window_height))
 
     config_manager = ConfigurationManager()
     config = config_manager.config
+    screen = pygame.display.set_mode((config.window_width, config.window_height))
 
     wrapped_model = ModelWrapper(config)
     wrapped_model.load_model("2019_06_11_test_1")
