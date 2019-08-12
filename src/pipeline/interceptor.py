@@ -10,7 +10,7 @@ class Interceptor:
     def __init__(self, configuration, model=None, recorder=None):
         self.renderer = None
         self.recorder = recorder
-        self.resolution = (configuration.recording_height, configuration.recording_width)
+        self.resolution = (configuration.recording_width, configuration.recording_height)
         self.model = model
 
         self.frame = None

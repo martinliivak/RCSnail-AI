@@ -5,10 +5,10 @@ import datetime
 
 
 class Recorder:
-    def __init__(self, config):
-        self.training_session = self.__get_training_file_name(config.path_to_training)
-        self.resolution = (config.recording_height, config.recording_width)
-        self.fps = config.recording_fps
+    def __init__(self, configuration):
+        self.training_session = self.__get_training_file_name(configuration.path_to_training)
+        self.resolution = (configuration.recording_width, configuration.recording_height)
+        self.fps = configuration.recording_fps
 
         self.session_frames = []
         self.session_telemetry = []
