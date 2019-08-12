@@ -4,8 +4,12 @@ from src.utilities.configuration import Configuration
 
 class ConfigurationManager:
 
-    def __init__(self, argument_list):
-        self.config = Configuration(self.__build_conf_map(argument_list))
+    def __init__(self, config_path='./config/configuration.yml'):
+        self.config = Configuration(self.__build_conf_map(config_path))
 
-    def __build_conf_map(self, argument_list):
-        return yaml.safe_load(argument_list[1])
+    def __build_conf_map(self, config_path):
+        with open(config_path, 'r') as stream:
+            try:
+                return yaml.safe_load(stream)
+            except yaml.YAMLError as exception:
+                raise exception

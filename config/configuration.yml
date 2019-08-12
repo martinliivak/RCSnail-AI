@@ -1,0 +1,8 @@
+recording_height: 40
+recording_width: 60
+recording_fps: 20
+path_to_training: "../training/"
+path_to_models: "../training/models/"
+car_override_enabled: false
+recording_enabled: true
+aggregated_recording_enabled: false

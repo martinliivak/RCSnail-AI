@@ -7,7 +7,7 @@ from av import VideoFrame
 
 
 class Car:
-    def __init__(self, update_override=None):
+    def __init__(self, configuration, update_override=None):
         # units in percentage range 0..1
         self.steering = 0.0
         self.throttle = 0.0
@@ -40,7 +40,7 @@ class Car:
         # telemetry
         self.batVoltage_mV = 0
 
-        self.__override_enabled = update_override is not None
+        self.__override_enabled = update_override is not None and configuration.car_override_enabled
         self.__update_override = update_override
 
     async def update(self, dt):

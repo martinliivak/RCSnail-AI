@@ -6,5 +6,7 @@ class Configuration:
     def __getattr__(self, name):
         if name in self.map:
             return self.map[name]
+        elif name.contains("enabled"):
+            return False
         else:
             raise Exception("Key not in map - misconfiguration")

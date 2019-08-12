@@ -7,10 +7,10 @@ from src.utilities.car_controls import CarControls, CarControlDiffs
 
 
 class Interceptor:
-    def __init__(self, resolution=(60, 40), model=None, recorder=None, aggregated_recording=False):
+    def __init__(self, configuration, model=None, recorder=None):
         self.renderer = None
         self.recorder = recorder
-        self.resolution = resolution
+        self.resolution = (configuration.recording_height, configuration.recording_width)
         self.model = model
 
         self.frame = None
@@ -20,8 +20,8 @@ class Interceptor:
         self.predicted_updates = None
 
         self.transformer = TrainingTransformer()
-        self.recording_enabled = self.recorder is not None and not aggregated_recording
-        self.aggregation_enabled = self.recorder is not None and aggregated_recording
+        self.recording_enabled = self.recorder is not None and configuration.recording_enabled
+        self.aggregation_enabled = self.recorder is not None and configuration.aggregated_recording_enabled
         self.aggregation_count = 0
 
     def set_renderer(self, renderer):

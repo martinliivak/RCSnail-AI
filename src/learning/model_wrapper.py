@@ -6,9 +6,9 @@ from src.utilities.car_controls import CarControlDiffs
 
 
 class ModelWrapper:
-    def __init__(self, path_to_models="../training/models/"):
+    def __init__(self, config):
         self.model = None
-        self.__path_to_models = path_to_models
+        self.__path_to_models = config.path_to_models
         self.__mapping = CarMapping()
 
     def create_model(self, model):
