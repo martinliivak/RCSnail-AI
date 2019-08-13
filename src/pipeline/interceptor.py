@@ -32,12 +32,11 @@ class Interceptor:
 
         if frame is not None:
             self.frame = self.__convert_frame(frame)
-            self.aggregation_count += 1
 
             if self.recording_enabled:
                 self.__record_state()
             elif self.aggregation_enabled:
-                self.__record_state_with_expert()
+                self.aggregation_count += self.__record_state_with_expert()
 
     def intercept_telemetry(self, telemetry):
         self.telemetry = telemetry
@@ -49,22 +48,21 @@ class Interceptor:
         self.recorder.record(self.frame, self.telemetry)
 
     def __record_state_with_expert(self):
-        self.recorder.record_expert(self.frame, self.telemetry, self.expert_updates)
+        return self.recorder.record_expert(self.frame, self.telemetry, self.expert_updates)
 
     async def car_update_override(self, car):
         self.expert_updates = CarControlDiffs(car.gear, car.d_steering, car.d_throttle, car.d_braking)
         self.car_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
 
-        # temp logging
-        if self.telemetry is not None:
-            print("d: {}  f: {}  t: {}".format(self.expert_updates.d_steering, self.car_controls.steering, self.telemetry["sa"]))
-
-        if self.aggregation_enabled and (self.aggregation_count % 100 == 0):
-            train, test = self.transformer.transform_aggregation_into_trainables(*self.recorder.get_current_data())
-            # TODO better naming convention for models
-            self.model.save_model("stuff " + str(self.aggregation_count))
-            await self.__train_in_executor(train, test)
-
+        if self.aggregation_enabled and self.aggregation_count > 0 and (self.aggregation_count % 100 == 0):
+            try:
+                print("Training iteration {}".format(self.aggregation_count))
+                train, test = self.transformer.transform_aggregation_into_trainables(*self.recorder.get_current_data())
+                await self.__train_in_executor(train, test)
+                # TODO better naming convention for models
+                self.model.save_model("aggregated_model_" + str(self.aggregation_count))
+            except Exception as ex:
+                print(ex)
         await self.__update_car_in_executor(car)
 
     async def __train_in_executor(self, train_tuple, test_tuple):
@@ -78,12 +76,13 @@ class Interceptor:
         await loop.run_in_executor(executor, self.__update_car_from_predictions, car)
 
     def __update_car_from_predictions(self, car):
-        if self.frame is not None and self.telemetry is not None:
-            self.predicted_updates = self.model.predict(self.frame, self.telemetry)
+        try:
+            if self.frame is not None and self.telemetry is not None:
+                self.predicted_updates = self.model.predict(self.frame, self.telemetry)
 
-            if self.predicted_updates is not None:
-                print(self.predicted_updates.d_steering)
-                car.gear = self.predicted_updates.gear
-                car.ext_update_steering(self.predicted_updates.d_steering)
-                car.throttle = 0.5
-                car.ext_update_linear_movement(self.predicted_updates.d_throttle, self.predicted_updates.d_braking)
+                if self.predicted_updates is not None:
+                    car.gear = self.predicted_updates.d_gear
+                    car.ext_update_steering(self.predicted_updates.d_steering)
+                    car.ext_update_linear_movement(self.predicted_updates.d_throttle, self.predicted_updates.d_braking)
+        except Exception as ex:
+            print(ex)

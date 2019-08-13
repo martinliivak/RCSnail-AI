@@ -22,16 +22,6 @@ class TrainingTransformer:
 
         return training_df.drop(training_df.tail(1).index)
 
-    def __create_label_df(self, expert_actions_list):
-        expert_actions_df = pd.DataFrame.from_records(expert_actions_list, columns=expert_actions_list[0]._fields)
-        # TODO drop empty initial signals if exist
-        return self.__collector.collect_expert_labels(expert_actions_df)
-
-    def __create_numeric_input_df(self, telemetry_list):
-        telemetry_df = pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0]._fields)
-        # TODO drop empty initial signals if exist
-        return self.__collector.collect_numeric_inputs(telemetry_df)
-
     def transform_aggregation_into_trainables(self, frames_list, telemetry_list, expert_actions_list):
         x_video = np.array(frames_list)
         x_numeric = self.__create_numeric_input_df(telemetry_list)
@@ -41,3 +31,15 @@ class TrainingTransformer:
             x_video, x_numeric, y, test_size=0.2)
 
         return (video_train, numeric_train, y_train), (video_test, numeric_test, y_test)
+
+    def __create_numeric_input_df(self, telemetry_list):
+        print(telemetry_list[0].keys())
+        telemetry_df = pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0].keys())
+        print(telemetry_df)
+        return self.__collector.collect_numeric_inputs(telemetry_df)
+
+    def __create_label_df(self, expert_actions_list):
+        print(expert_actions_list[0].__slots__)
+        expert_actions_df = pd.DataFrame.from_records(expert_actions_list, columns=expert_actions_list[0].__slots__)
+        print(expert_actions_df)
+        return self.__collector.collect_expert_labels(expert_actions_df)

@@ -8,6 +8,8 @@ from src.learning.models import create_cnn, create_mlp, create_multi_model
 from src.learning.training.label_collector import LabelCollector
 from src.learning.training.training_file_reader import TrainingFileReader
 from src.learning.training.training_transformer import TrainingTransformer
+from utilities.configuration import Configuration
+from utilities.configuration_manager import ConfigurationManager
 
 filename = "2019_06_28_test_2"
 
@@ -37,7 +39,7 @@ def main():
     video_train, video_test, input_train, input_test, y_train, y_test = train_test_split(
         video, numeric_inputs, labels, test_size=0.2)
 
-    #create_model(concat_model, input_test, input_train, video, video_test, video_train, y_test, y_train)
+    create_model(concat_model, input_test, input_train, video, video_test, video_train, y_test, y_train)
 
 
 def analyze_time_diffs_in_series(telemetry_frame):
@@ -59,10 +61,12 @@ def analyze_time_diffs_between_series(telemetry_frame):
 
 
 def create_model(concat_model, input_test, input_train, video, video_test, video_train, y_test, y_train):
-    wrapped_model = ModelWrapper()
+    config_manager = ConfigurationManager()
+
+    wrapped_model = ModelWrapper(config_manager.config)
     wrapped_model.create_model(concat_model)
     wrapped_model.model.summary()
-    wrapped_model.fit((video_train, input_train, y_train), (video_test, input_test, y_test), epochs=5, verbose=1)
+    wrapped_model.fit((video_train, input_train, y_train), (video_test, input_test, y_test), epochs=1, verbose=1)
     wrapped_model.save_model(filename)
     wrapped_model.load_model(filename)
     predictions = wrapped_model.predict(video[0], {"p": 0, "p2": 0, "c": 244593, "c2": 1560248301322, "b": 3705, "sa": 511})

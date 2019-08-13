@@ -40,7 +40,7 @@ def main():
     screen = pygame.display.set_mode((config.window_width, config.window_height))
 
     wrapped_model = ModelWrapper(config)
-    wrapped_model.load_model("2019_06_11_test_1")
+    wrapped_model.load_model("2019_06_28_test_2")
 
     recorder = Recorder(config)
     interceptor = Interceptor(config, model=wrapped_model, recorder=recorder)

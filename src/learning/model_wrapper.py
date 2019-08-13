@@ -16,11 +16,12 @@ class ModelWrapper:
 
     def load_model(self, model_file):
         self.model = load_model(self.__path_to_models + model_file + ".h5")
+        self.model._make_predict_function()
         print("Loaded " + model_file)
 
     def save_model(self, model_file):
         self.model.save(self.__path_to_models + model_file + ".h5")
-        print("Model has been saved to " + self.__path_to_models + " as " + model_file + ".h5")
+        print("Model has been saved to {} as {}.h5".format(self.__path_to_models, model_file))
 
     def fit(self, train_tuple, test_tuple, epochs=20, batch_size=8, verbose=0):
         train_frames, train_numeric_inputs, train_labels = train_tuple
@@ -37,7 +38,6 @@ class ModelWrapper:
         steering = float(telemetry[self.__mapping.steering])
         numeric_inputs = np.array([steering])
         predictions = self.model.predict([numeric_inputs, frame[np.newaxis, :]])
-
         return self.__updates_from_prediction(predictions)
 
     @staticmethod

@@ -7,6 +7,6 @@ recording_height: 40
 recording_width: 60
 recording_fps: 20
 # Procedural flags
-car_override_enabled: false
-recording_enabled: true
-aggregated_recording_enabled: false
+car_override_enabled: true
+recording_enabled: false
+aggregated_recording_enabled: true

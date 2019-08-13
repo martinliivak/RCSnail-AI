@@ -26,9 +26,12 @@ class Recorder:
             self.session_telemetry.append(telemetry)
 
     def record_expert(self, frame, telemetry, expert_actions):
-        self.session_frames.append(frame)
-        self.session_telemetry.append(telemetry)
-        self.session_expert_actions.append(expert_actions)
+        if telemetry is not None and frame is not None and expert_actions is not None:
+            self.session_frames.append(frame)
+            self.session_telemetry.append(telemetry)
+            self.session_expert_actions.append(expert_actions)
+            return 1
+        return 0
 
     def get_current_data(self):
         return self.session_frames, self.session_telemetry, self.session_expert_actions
