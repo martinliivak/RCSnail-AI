@@ -7,11 +7,11 @@ from src.utilities.car_controls import CarControls, CarControlDiffs
 
 
 class Interceptor:
-    def __init__(self, configuration, model=None, recorder=None):
+    def __init__(self, configuration, wrapped_model=None, recorder=None):
         self.renderer = None
         self.recorder = recorder
         self.resolution = (configuration.recording_width, configuration.recording_height)
-        self.model = model
+        self.wrapped_model = wrapped_model
 
         self.frame = None
         self.telemetry = None
@@ -54,21 +54,23 @@ class Interceptor:
         self.expert_updates = CarControlDiffs(car.gear, car.d_steering, car.d_throttle, car.d_braking)
         self.car_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
 
-        if self.aggregation_enabled and self.aggregation_count > 0 and (self.aggregation_count % 100 == 0):
+        if self.aggregation_enabled and self.aggregation_count > 0 and (self.aggregation_count % 500 == 0):
             try:
                 print("Training iteration {}".format(self.aggregation_count))
                 train, test = self.transformer.transform_aggregation_into_trainables(*self.recorder.get_current_data())
                 await self.__train_in_executor(train, test)
                 # TODO better naming convention for models
-                self.model.save_model("aggregated_model_" + str(self.aggregation_count))
+                self.wrapped_model.save_model("aggregated_model_" + str(self.aggregation_count))
             except Exception as ex:
-                print(ex)
-        await self.__update_car_in_executor(car)
+                print("Aggregated training exception: {}".format(ex))
+
+        if self.frame is not None and self.telemetry is not None:
+            await self.__update_car_in_executor(car)
 
     async def __train_in_executor(self, train_tuple, test_tuple):
         executor = ThreadPoolExecutor(max_workers=8)
         loop = asyncio.get_event_loop()
-        await loop.run_in_executor(executor, self.model.fit, train_tuple, test_tuple)
+        await loop.run_in_executor(executor, self.wrapped_model.fit, train_tuple, test_tuple)
 
     async def __update_car_in_executor(self, car):
         executor = ThreadPoolExecutor(max_workers=3)
@@ -77,12 +79,11 @@ class Interceptor:
 
     def __update_car_from_predictions(self, car):
         try:
-            if self.frame is not None and self.telemetry is not None:
-                self.predicted_updates = self.model.predict(self.frame, self.telemetry)
+            self.predicted_updates = self.wrapped_model.predict(self.frame, self.telemetry)
 
-                if self.predicted_updates is not None:
-                    car.gear = self.predicted_updates.d_gear
-                    car.ext_update_steering(self.predicted_updates.d_steering)
-                    car.ext_update_linear_movement(self.predicted_updates.d_throttle, self.predicted_updates.d_braking)
+            if self.predicted_updates is not None:
+                car.gear = self.predicted_updates.d_gear
+                car.ext_update_steering(self.predicted_updates.d_steering)
+                car.ext_update_linear_movement(self.predicted_updates.d_throttle, self.predicted_updates.d_braking)
         except Exception as ex:
-            print(ex)
+            print("Car update exception: {}".format(ex))

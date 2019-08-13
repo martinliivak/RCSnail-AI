@@ -43,7 +43,7 @@ def main():
     wrapped_model.load_model("2019_06_28_test_2")
 
     recorder = Recorder(config)
-    interceptor = Interceptor(config, model=wrapped_model, recorder=recorder)
+    interceptor = Interceptor(config, wrapped_model=wrapped_model, recorder=recorder)
 
     car = Car(config, update_override=interceptor.car_update_override)
     renderer = PygameRenderer(screen, car)
