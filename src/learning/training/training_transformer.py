@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from src.learning.training.label_collector import LabelCollector
+from utilities.car_controls import CarControlDiffs
 
 
 class TrainingTransformer:
@@ -33,13 +34,9 @@ class TrainingTransformer:
         return (video_train, numeric_train, y_train), (video_test, numeric_test, y_test)
 
     def __create_numeric_input_df(self, telemetry_list):
-        print(telemetry_list[0].keys())
         telemetry_df = pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0].keys())
-        print(telemetry_df)
         return self.__collector.collect_numeric_inputs(telemetry_df)
 
     def __create_label_df(self, expert_actions_list):
-        print(expert_actions_list[0].__slots__)
-        expert_actions_df = pd.DataFrame.from_records(expert_actions_list, columns=expert_actions_list[0].__slots__)
-        print(expert_actions_df)
+        expert_actions_df = pd.DataFrame.from_records(expert_actions_list, columns=CarControlDiffs.__slots__)
         return self.__collector.collect_expert_labels(expert_actions_df)

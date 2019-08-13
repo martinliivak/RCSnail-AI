@@ -7,10 +7,10 @@ class CarMapping:
             "steering": "sa",
             "throttle": "t",
             "braking": "b",
-            "d_gear": "d_g",
-            "d_steering": "d_sa",
-            "d_throttle": "d_t",
-            "d_braking": "d_b"
+            "d_gear": "d_gear",
+            "d_steering": "d_steering",
+            "d_throttle": "d_throttle",
+            "d_braking": "d_braking"
         }
 
     def __getattr__(self, name):

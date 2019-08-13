@@ -33,6 +33,7 @@ class ModelWrapper:
             epochs=epochs,
             batch_size=batch_size,
             verbose=verbose)
+        self.model._make_predict_function()
 
     def predict(self, frame, telemetry):
         steering = float(telemetry[self.__mapping.steering])
