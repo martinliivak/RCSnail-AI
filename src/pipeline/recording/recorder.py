@@ -1,17 +1,23 @@
 import cv2
 import json
+import os
 import datetime
 
 
 class Recorder:
-    def __init__(self, training_session, resolution=(60, 40), fps=20.0):
-        self.training_session = training_session
-        self.resolution = resolution
-        self.fps = fps
+    def __init__(self, configuration):
+        self.training_session = self.__get_training_file_name(configuration.path_to_training)
+        self.resolution = (configuration.recording_width, configuration.recording_height)
+        self.fps = configuration.recording_fps
 
         self.session_frames = []
         self.session_telemetry = []
         self.session_expert_actions = []
+
+    def __get_training_file_name(self, path_to_training):
+        date = datetime.datetime.today().strftime("%Y_%m_%d")
+        files_from_same_date = list(filter(lambda file: date in file, os.listdir(path_to_training)))
+        return path_to_training + date + "_test_" + str(int(len(files_from_same_date) / 2 + 1))
 
     def record(self, frame, telemetry):
         if telemetry is not None and frame is not None:
@@ -20,9 +26,15 @@ class Recorder:
             self.session_telemetry.append(telemetry)
 
     def record_expert(self, frame, telemetry, expert_actions):
-        self.session_frames.append(frame)
-        self.session_telemetry.append(telemetry)
-        self.session_expert_actions.append(expert_actions)
+        if telemetry is not None and frame is not None and expert_actions is not None:
+            self.session_frames.append(frame)
+            self.session_telemetry.append(telemetry)
+            self.session_expert_actions.append(expert_actions.to_list())
+            return 1
+        return 0
+
+    def get_current_data(self):
+        return self.session_frames, self.session_telemetry, self.session_expert_actions
 
     def save_session(self):
         session_length = len(self.session_telemetry)

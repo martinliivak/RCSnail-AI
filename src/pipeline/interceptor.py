@@ -2,15 +2,16 @@ import asyncio
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 
+from src.learning.training.training_transformer import TrainingTransformer
 from src.utilities.car_controls import CarControls, CarControlDiffs
 
 
 class Interceptor:
-    def __init__(self, resolution=(60, 40), model=None, recorder=None, aggregated_recording=False):
+    def __init__(self, configuration, wrapped_model=None, recorder=None):
         self.renderer = None
-        self.training_recorder = recorder
-        self.resolution = resolution
-        self.model = model
+        self.recorder = recorder
+        self.resolution = (configuration.recording_width, configuration.recording_height)
+        self.wrapped_model = wrapped_model
 
         self.frame = None
         self.telemetry = None
@@ -18,8 +19,10 @@ class Interceptor:
         self.car_controls = CarControls(0, 0.0, 0.0, 0.0)
         self.predicted_updates = None
 
-        self.recording_enabled = self.training_recorder is not None and not aggregated_recording
-        self.aggregation_enabled = self.training_recorder is not None and aggregated_recording
+        self.transformer = TrainingTransformer()
+        self.recording_enabled = self.recorder is not None and configuration.recording_enabled
+        self.aggregation_enabled = self.recorder is not None and configuration.aggregated_recording_enabled
+        self.aggregation_count = 0
 
     def set_renderer(self, renderer):
         self.renderer = renderer
@@ -33,7 +36,7 @@ class Interceptor:
             if self.recording_enabled:
                 self.__record_state()
             elif self.aggregation_enabled:
-                self.__record_state_with_expert()
+                self.aggregation_count += self.__record_state_with_expert()
 
     def intercept_telemetry(self, telemetry):
         self.telemetry = telemetry
@@ -42,23 +45,32 @@ class Interceptor:
         return np.array(frame.to_image().resize(self.resolution))
 
     def __record_state(self):
-        self.training_recorder.record(self.frame, self.telemetry)
+        self.recorder.record(self.frame, self.telemetry)
 
     def __record_state_with_expert(self):
-        self.training_recorder.record_expert(self.frame, self.telemetry, self.expert_updates)
+        return self.recorder.record_expert(self.frame, self.telemetry, self.expert_updates)
 
     async def car_update_override(self, car):
         self.expert_updates = CarControlDiffs(car.gear, car.d_steering, car.d_throttle, car.d_braking)
         self.car_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
 
-        if self.telemetry is not None:
-            print("d: {}  f: {}  t: {}".format(self.expert_updates.d_steering, self.car_controls.steering, self.telemetry["sa"]))
+        if self.aggregation_enabled and self.aggregation_count > 0 and (self.aggregation_count % 500 == 0):
+            try:
+                print("Training iteration {}".format(self.aggregation_count))
+                train, test = self.transformer.transform_aggregation_into_trainables(*self.recorder.get_current_data())
+                await self.__train_in_executor(train, test)
+                # TODO better naming convention for models
+                self.wrapped_model.save_model("aggregated_model_" + str(self.aggregation_count))
+            except Exception as ex:
+                print("Aggregated training exception: {}".format(ex))
 
-        if self.aggregation_enabled:
-            # TODO implement dagger Pi_i training here
+        if self.frame is not None and self.telemetry is not None:
             await self.__update_car_in_executor(car)
-        else:
-            await self.__update_car_in_executor(car)
+
+    async def __train_in_executor(self, train_tuple, test_tuple):
+        executor = ThreadPoolExecutor(max_workers=8)
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(executor, self.wrapped_model.fit, train_tuple, test_tuple)
 
     async def __update_car_in_executor(self, car):
         executor = ThreadPoolExecutor(max_workers=3)
@@ -66,12 +78,12 @@ class Interceptor:
         await loop.run_in_executor(executor, self.__update_car_from_predictions, car)
 
     def __update_car_from_predictions(self, car):
-        if self.frame is not None and self.telemetry is not None:
-            self.predicted_updates = self.model.predict(self.frame, self.telemetry)
+        try:
+            self.predicted_updates = self.wrapped_model.predict(self.frame, self.telemetry)
 
             if self.predicted_updates is not None:
-                print(self.predicted_updates.d_steering)
-                car.gear = self.predicted_updates.gear
+                car.gear = self.predicted_updates.d_gear
                 car.ext_update_steering(self.predicted_updates.d_steering)
-                car.throttle = 0.5
                 car.ext_update_linear_movement(self.predicted_updates.d_throttle, self.predicted_updates.d_braking)
+        except Exception as ex:
+            print("Car update exception: {}".format(ex))
