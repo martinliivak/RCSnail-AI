@@ -1,7 +1,9 @@
 import asyncio
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Process, Pipe
 
+from learning.model_multi_wrapper import ModelMultiWrapper, model_process_job
 from src.learning.training.training_transformer import TrainingTransformer
 from src.utilities.car_controls import CarControls, CarControlDiffs
 
@@ -19,10 +21,15 @@ class Interceptor:
         self.car_controls = CarControls(0, 0.0, 0.0, 0.0)
         self.predicted_updates = None
 
-        self.transformer = TrainingTransformer()
         self.recording_enabled = self.recorder is not None and configuration.recording_enabled
-        self.runtime_training_enabled = self.recorder is not None and configuration.runtime_training_enabled
-        self.aggregation_count = 0
+
+        if configuration.runtime_training_enabled:
+            self.runtime_training_enabled = True
+            self.aggregation_count = 0
+            self.transformer = TrainingTransformer()
+
+            self.parent_conn, child_conn = Pipe()
+            self.model_process = Process(target=model_process_job, args=(child_conn,))
 
     def set_renderer(self, renderer):
         self.renderer = renderer

@@ -9,4 +9,4 @@ recording_fps: 20
 # Procedural flags
 car_override_enabled: true
 recording_enabled: false
-aggregated_recording_enabled: true
+runtime_training_enabled: true
