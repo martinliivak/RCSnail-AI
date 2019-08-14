@@ -8,6 +8,7 @@ import pygame
 import logging
 from rcsnail import RCSnail
 
+from pipeline.multiprocess_interceptor import MultiInterceptor
 from src.learning.model_wrapper import ModelWrapper
 from src.pipeline.recording.recorder import Recorder
 from src.utilities.configuration_manager import ConfigurationManager
@@ -40,7 +41,8 @@ def main():
     screen = pygame.display.set_mode((config.window_width, config.window_height))
 
     recorder = Recorder(config)
-    interceptor = Interceptor(config, recorder=recorder)
+    #interceptor = Interceptor(config, recorder=recorder)
+    interceptor = MultiInterceptor(config, recorder=recorder)
 
     car = Car(config, update_override=interceptor.car_update_override)
     renderer = PygameRenderer(screen, car)
@@ -63,6 +65,7 @@ def main():
         event_task.cancel()
         pygame.quit()
         asyncio.ensure_future(rcs.close_client_session())
+        interceptor.close()
 
         if recorder is not None:
             recorder.save_session()

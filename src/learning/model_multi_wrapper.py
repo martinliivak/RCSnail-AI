@@ -7,16 +7,19 @@ from src.utilities.car_controls import CarControlDiffs
 from utilities.configuration import Configuration
 
 
-def model_process_job(connection: Connection, configuration: Configuration):
-    wrapped_model = ModelMultiWrapper(connection, configuration)
+def model_process_job(connection: Connection, configuration_map: map):
+    wrapped_model = ModelMultiWrapper(connection, Configuration(configuration_map))
     model_not_training = True
 
     while True:
         wait([connection], timeout=60)
         data = connection.recv()
+        print(data)
         if data[0]:
+            print("training")
             wrapped_model.fit(data[1], data[2])
         else:
+            print("predicting")
             predicted_updates = wrapped_model.predict(data[1], data[2])
             connection.send(predicted_updates)
 

@@ -88,3 +88,6 @@ class Interceptor:
                 car.ext_update_linear_movement(self.predicted_updates.d_throttle, self.predicted_updates.d_braking)
         except Exception as ex:
             print("Car update exception: {}".format(ex))
+
+    def close(self):
+        pass

@@ -10,7 +10,7 @@ from src.learning.training.training_transformer import TrainingTransformer
 from src.utilities.car_controls import CarControls, CarControlDiffs
 
 
-class Interceptor:
+class MultiInterceptor:
     def __init__(self, configuration, recorder=None):
         self.renderer = None
         self.recorder = recorder
@@ -30,7 +30,8 @@ class Interceptor:
             self.transformer = TrainingTransformer()
 
             self.parent_conn, child_conn = Pipe()
-            self.model_process = Process(target=model_process_job, args=(child_conn, configuration))
+            self.model_process = Process(target=model_process_job, args=(child_conn, configuration.map))
+            self.model_process.start()
 
     def set_renderer(self, renderer):
         self.renderer = renderer
@@ -65,12 +66,14 @@ class Interceptor:
         if self.runtime_training_enabled and self.aggregation_count > 0 and (self.aggregation_count % 200 == 0):
             print("Training iteration {}".format(self.aggregation_count))
             train, test = self.transformer.transform_aggregation_into_trainables(*self.recorder.get_current_data())
-            self.__initiate_training(train, test)
+            self.__send_train_data_to_process(train, test)
 
         if self.frame is not None and self.telemetry is not None:
+            print("update from predictions")
             await self.__update_car_in_executor(car)
+            print("successfully updated from predictions")
 
-    def __initiate_training(self, train_tuple, test_tuple):
+    def __send_train_data_to_process(self, train_tuple, test_tuple):
         self.parent_conn.send((True, train_tuple, test_tuple))
 
     async def __update_car_in_executor(self, car):
@@ -90,3 +93,7 @@ class Interceptor:
                 car.ext_update_linear_movement(self.predicted_updates.d_throttle, self.predicted_updates.d_braking)
         except Exception as ex:
             print("Prediction exception: {}".format(ex))
+
+    def close(self):
+        self.model_process.terminate()
+        self.model_process.join()
