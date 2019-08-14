@@ -2,16 +2,17 @@ import asyncio
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 
+from learning.model_wrapper import ModelWrapper
 from src.learning.training.training_transformer import TrainingTransformer
 from src.utilities.car_controls import CarControls, CarControlDiffs
 
 
 class Interceptor:
-    def __init__(self, configuration, wrapped_model=None, recorder=None):
+    def __init__(self, configuration, recorder=None):
         self.renderer = None
         self.recorder = recorder
         self.resolution = (configuration.recording_width, configuration.recording_height)
-        self.wrapped_model = wrapped_model
+        self.wrapped_model = ModelWrapper(configuration)
 
         self.frame = None
         self.telemetry = None

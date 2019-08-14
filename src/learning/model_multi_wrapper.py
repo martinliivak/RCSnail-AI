@@ -1,61 +1,62 @@
 import numpy as np
-from multiprocessing.connection import Connection
+from multiprocessing.connection import Connection, wait
 
+from learning.models import create_multi_model, create_mlp, create_cnn
 from src.learning.training.car_mapping import CarMapping
 from src.utilities.car_controls import CarControlDiffs
+from utilities.configuration import Configuration
 
 
-def model_process_job(connection: Connection):
-    model = ModelMultiWrapper(connection)
+def model_process_job(connection: Connection, configuration: Configuration):
+    wrapped_model = ModelMultiWrapper(connection, configuration)
+    model_not_training = True
+
+    while True:
+        wait([connection], timeout=60)
+        data = connection.recv()
+        if data[0]:
+            wrapped_model.fit(data[1], data[2])
+        else:
+            predicted_updates = wrapped_model.predict(data[1], data[2])
+            connection.send(predicted_updates)
 
 
 class ModelMultiWrapper:
-    def __init__(self, connection: Connection):
-        import tensorflow as tf
-
-        self.model = None
+    def __init__(self, connection: Connection, configuration: Configuration):
+        self.model = self.__create_model()
         self.__mapping = CarMapping()
+        self.__path_to_models: str = configuration.path_to_models
 
-        self.__connection = connection
+        self.__connection: Connection = connection
 
-        self.__session = tf.Session()
-        self.__graph = tf.get_default_graph()
-        with self.__graph.as_default():
-            with self.__session.as_default():
-                print("Wrapped model initialised")
-
-    def create_model(self, model):
-        with self.__graph.as_default():
-            with self.__session.as_default():
-                self.model = model
+    def __create_model(self):
+        mlp = create_mlp(regress=False)
+        cnn = create_cnn(regress=False)
+        return create_multi_model(mlp, cnn)
 
     def load_model(self, model_file):
         from keras.models import load_model
 
-        with self.__graph.as_default():
-            with self.__session.as_default():
-                self.model = load_model(self.__path_to_models + model_file + ".h5")
-                print("Loaded " + model_file)
+        self.model = load_model(self.__path_to_models + model_file + ".h5")
+        print("Loaded " + model_file)
 
     def save_model(self, model_file):
-        with self.__graph.as_default():
-            with self.__session.as_default():
-                self.model.save(self.__path_to_models + model_file + ".h5")
-                print("Model has been saved to {} as {}.h5".format(self.__path_to_models, model_file))
+        self.model.save(self.__path_to_models + model_file + ".h5")
+        print("Model has been saved to {} as {}.h5".format(self.__path_to_models, model_file))
 
     def fit(self, train_tuple, test_tuple, epochs=1, batch_size=20, verbose=1):
         try:
             train_frames, train_numeric_inputs, train_labels = train_tuple
             test_frames, test_numeric_inputs, test_labels = test_tuple
 
-            with self.__graph.as_default():
-                with self.__session.as_default():
-                    self.model.fit(
-                        [train_numeric_inputs, train_frames], train_labels,
-                        validation_data=([test_numeric_inputs, test_frames], test_labels),
-                        epochs=epochs,
-                        batch_size=batch_size,
-                        verbose=verbose)
+            new_model = self.__create_model()
+            new_model.fit(
+                [train_numeric_inputs, train_frames], train_labels,
+                validation_data=([test_numeric_inputs, test_frames], test_labels),
+                epochs=epochs,
+                batch_size=batch_size,
+                verbose=verbose)
+            self.model = new_model
         except Exception as ex:
             print("Training exception: {}".format(ex))
 

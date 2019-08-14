@@ -39,11 +39,8 @@ def main():
     config = config_manager.config
     screen = pygame.display.set_mode((config.window_width, config.window_height))
 
-    wrapped_model = ModelWrapper(config)
-    wrapped_model.load_model("2019_06_28_test_2")
-
     recorder = Recorder(config)
-    interceptor = Interceptor(config, wrapped_model=wrapped_model, recorder=recorder)
+    interceptor = Interceptor(config, recorder=recorder)
 
     car = Car(config, update_override=interceptor.car_update_override)
     renderer = PygameRenderer(screen, car)

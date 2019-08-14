@@ -1,14 +1,13 @@
 import numpy as np
-from keras.models import load_model
-import tensorflow as tf
 
+from learning.models import create_mlp, create_cnn, create_multi_model
 from src.learning.training.car_mapping import CarMapping
 from src.utilities.car_controls import CarControlDiffs
 
 
 class ModelWrapper:
     def __init__(self, config):
-        self.model = None
+        import tensorflow as tf
         self.__path_to_models = config.path_to_models
         self.__mapping = CarMapping()
 
@@ -18,12 +17,17 @@ class ModelWrapper:
             with self.__session.as_default():
                 print("Wrapped model initialised")
 
-    def create_model(self, model):
+        self.model = self.__create_model()
+
+    def __create_model(self):
         with self.__graph.as_default():
             with self.__session.as_default():
-                self.model = model
+                mlp = create_mlp(regress=False)
+                cnn = create_cnn(regress=False)
+                return create_multi_model(mlp, cnn)
 
     def load_model(self, model_file):
+        from keras.models import load_model
         with self.__graph.as_default():
             with self.__session.as_default():
                 self.model = load_model(self.__path_to_models + model_file + ".h5")

@@ -17,7 +17,7 @@ def create_multi_model(mlp, cnn):
     return model
 
 
-def create_mlp(input_shape, regress=False):
+def create_mlp(input_shape=(1,), regress=False):
     from keras.layers import Input
     from keras.layers.core import Dense
     from keras.models import Model
@@ -32,7 +32,7 @@ def create_mlp(input_shape, regress=False):
     return Model(inputs, model)
 
 
-def create_cnn(input_shape=(60, 40, 3), filters=(16, 32, 64), regress=False):
+def create_cnn(input_shape=(40, 60, 3), filters=(16, 32, 64), regress=False):
     from keras.layers.normalization import BatchNormalization
     from keras.layers.convolutional import Conv2D
     from keras.layers.convolutional import MaxPooling2D

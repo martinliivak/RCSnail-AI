@@ -11,7 +11,7 @@ from src.learning.training.training_transformer import TrainingTransformer
 from utilities.configuration import Configuration
 from utilities.configuration_manager import ConfigurationManager
 
-filename = "2019_06_28_test_2"
+filename = "2019_08_13_test_20"
 
 
 def main():
@@ -28,18 +28,13 @@ def main():
     labels = collector.collect_labels(telemetry_df)
     numeric_inputs = collector.collect_numeric_inputs(telemetry_df)
 
-    # temp graphing telemetry lags
-    analyze_time_diffs_in_series(telemetry_df)
-    analyze_time_diffs_between_series(telemetry_df)
-
-    mlp = create_mlp(input_dim=numeric_inputs.shape[1], regress=False)
-    cnn = create_cnn(input_shape=video.shape[1:], regress=False)
-    concat_model = create_multi_model(mlp, cnn)
+    #mlp = create_mlp(input_shape=(numeric_inputs.shape[1:]), regress=False)
+    #cnn = create_cnn(input_shape=video.shape[1:], regress=False)
 
     video_train, video_test, input_train, input_test, y_train, y_test = train_test_split(
         video, numeric_inputs, labels, test_size=0.2)
 
-    create_model(concat_model, input_test, input_train, video, video_test, video_train, y_test, y_train)
+    create_model(input_test, input_train, video, video_test, video_train, y_test, y_train)
 
 
 def analyze_time_diffs_in_series(telemetry_frame):
@@ -60,11 +55,10 @@ def analyze_time_diffs_between_series(telemetry_frame):
     plt.show()
 
 
-def create_model(concat_model, input_test, input_train, video, video_test, video_train, y_test, y_train):
+def create_model(input_test, input_train, video, video_test, video_train, y_test, y_train):
     config_manager = ConfigurationManager()
 
     wrapped_model = ModelWrapper(config_manager.config)
-    wrapped_model.create_model(concat_model)
     wrapped_model.model.summary()
     wrapped_model.fit((video_train, input_train, y_train), (video_test, input_test, y_test), epochs=1, verbose=1)
     wrapped_model.save_model(filename)
