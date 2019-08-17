@@ -1,5 +1,4 @@
 import os
-import sys
 import datetime
 import asyncio
 from concurrent.futures import ThreadPoolExecutor

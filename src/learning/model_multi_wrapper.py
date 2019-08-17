@@ -8,13 +8,13 @@ from utilities.configuration import Configuration
 
 
 def model_process_job(connection: Connection, configuration_map: map):
+    print("hello from process")
     wrapped_model = ModelMultiWrapper(connection, Configuration(configuration_map))
     model_not_training = True
 
     while True:
         wait([connection], timeout=60)
         data = connection.recv()
-        print(data)
         if data[0]:
             print("training")
             wrapped_model.fit(data[1], data[2])
@@ -66,10 +66,8 @@ class ModelMultiWrapper:
     def predict(self, frame, telemetry):
         steering = float(telemetry[self.__mapping.steering])
         numeric_inputs = np.array([steering])
-        with self.__graph.as_default():
-            with self.__session.as_default():
-                predictions = self.model.predict([numeric_inputs, frame[np.newaxis, :]])
-                return self.__updates_from_prediction(predictions)
+        predictions = self.model.predict([numeric_inputs, frame[np.newaxis, :]])
+        return self.__updates_from_prediction(predictions)
 
     @staticmethod
     def __updates_from_prediction(prediction):

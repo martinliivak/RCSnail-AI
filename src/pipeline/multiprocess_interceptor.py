@@ -29,8 +29,8 @@ class MultiInterceptor:
             self.aggregation_count = 0
             self.transformer = TrainingTransformer()
 
-            self.parent_conn, child_conn = Pipe()
-            self.model_process = Process(target=model_process_job, args=(child_conn, configuration.map))
+            self.parent_conn, self.child_conn = Pipe()
+            self.model_process = Process(target=model_process_job, args=(self.child_conn, configuration.map))
             self.model_process.start()
 
     def set_renderer(self, renderer):
@@ -63,7 +63,7 @@ class MultiInterceptor:
         self.expert_updates = CarControlDiffs(car.gear, car.d_steering, car.d_throttle, car.d_braking)
         self.car_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
 
-        if self.runtime_training_enabled and self.aggregation_count > 0 and (self.aggregation_count % 200 == 0):
+        if self.runtime_training_enabled and self.aggregation_count > 0 and (self.aggregation_count % 1000 == 0):
             print("Training iteration {}".format(self.aggregation_count))
             train, test = self.transformer.transform_aggregation_into_trainables(*self.recorder.get_current_data())
             self.__send_train_data_to_process(train, test)
@@ -84,6 +84,7 @@ class MultiInterceptor:
     def __update_car_from_predictions(self, car):
         try:
             self.parent_conn.send((False, self.frame, self.telemetry))
+            print("process alive " + str(self.model_process.is_alive()))
             wait([self.parent_conn])
             predicted_updates = self.parent_conn.recv()
 
@@ -97,3 +98,6 @@ class MultiInterceptor:
     def close(self):
         self.model_process.terminate()
         self.model_process.join()
+
+        self.parent_conn.close()
+        self.child_conn.close()
