@@ -56,34 +56,42 @@ class MultiInterceptor:
         return self.recorder.record_expert(self.frame, self.telemetry, self.expert_updates)
 
     async def car_update_override(self, car):
-        self.expert_updates = CarControlDiffs(car.gear, car.d_steering, car.d_throttle, car.d_braking)
-        self.car_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
+        try:
+            self.expert_updates = CarControlDiffs(car.gear, car.d_steering, car.d_throttle, car.d_braking)
+            self.car_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
 
-        if self.runtime_training_enabled and self.aggregation_count > 0 and (self.aggregation_count % 1000 == 0):
-            train, test = self.transformer.transform_aggregation_to_inputs(*self.recorder.get_current_data())
-            self.__start_training_model(train, test)
+            if self.runtime_training_enabled and self.aggregation_count > 0 and ((self.aggregation_count // 2) % 500) == 0:
+                train, test = self.transformer.transform_aggregation_to_inputs(*self.recorder.get_current_data())
+                self.__start_fitting_model(train, test)
 
-        if self.frame is not None and self.telemetry is not None:
-            await self.__update_car_from_predictions(car)
+            if self.frame is not None and self.telemetry is not None:
+                self.__update_car_from_predictions(car)
+        except Exception as ex:
+            print("Override exception: {}".format(ex))
 
-    def __start_training_model(self, train_tuple, test_tuple):
+    def __start_fitting_model(self, train_tuple, test_tuple):
         self.parent_conn.send((True, train_tuple, test_tuple))
 
-    async def __update_car_from_predictions(self, car):
+    def __update_car_from_predictions(self, car):
         try:
-            await self.__send_data_to_model()
+            self.__send_data_to_model()
 
-            wait([self.parent_conn])
-            predicted_updates = self.parent_conn.recv()
+            if self.parent_conn.poll(1):
+                predicted_updates = self.parent_conn.recv()
 
-            if predicted_updates is not None:
-                car.gear = predicted_updates.d_gear
-                car.ext_update_steering(predicted_updates.d_steering)
-                car.ext_update_linear_movement(predicted_updates.d_throttle, predicted_updates.d_braking)
+                if predicted_updates is not None:
+                    car.gear = predicted_updates.d_gear
+                    car.ext_update_steering(predicted_updates.d_steering)
+                    car.ext_update_linear_movement(predicted_updates.d_throttle, predicted_updates.d_braking)
+            else:
+                # TODO question yourself if this is necessary and sane
+                car.gear = self.expert_updates.d_gear
+                car.ext_update_steering(self.expert_updates.d_steering)
+                car.ext_update_linear_movement(self.expert_updates.d_throttle, self.expert_updates.d_braking)
         except Exception as ex:
             print("Prediction exception: {}".format(ex))
 
-    async def __send_data_to_model(self):
+    def __send_data_to_model(self):
         if self.frame is not None and self.telemetry is not None:
             self.parent_conn.send((False, self.frame, self.telemetry))
 

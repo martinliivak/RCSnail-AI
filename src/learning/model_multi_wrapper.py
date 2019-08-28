@@ -11,15 +11,16 @@ from utilities.configuration import Configuration
 
 
 def model_process_job(connection: Connection, configuration_map: map):
-    print("hello from process")
+    print("Hello from model process")
     wrapped_model = ModelMultiWrapper(connection, Configuration(configuration_map))
 
     while True:
         wait([connection], timeout=60)
         data = connection.recv()
         if data[0]:
-            print("Training model")
+            print("Training...")
             wrapped_model.fit(data[1], data[2])
+            print("Training completed")
         else:
             predicted_updates = wrapped_model.predict(data[1], data[2])
             connection.send(predicted_updates)
@@ -48,7 +49,7 @@ class ModelMultiWrapper:
         self.model.save(self.__path_to_models + model_file + ".h5")
         print("Model has been saved to {} as {}.h5".format(self.__path_to_models, model_file))
 
-    def fit(self, train_tuple, test_tuple, epochs=1, batch_size=20, verbose=1):
+    def fit(self, train_tuple, test_tuple, epochs=1, batch_size=20, verbose=0):
         try:
             from keras.backend import clear_session
 
