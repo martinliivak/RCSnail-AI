@@ -1,29 +1,33 @@
-import asyncio
 import numpy as np
-from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Process, Pipe
+from multiprocessing.connection import wait
 
-from learning.model_wrapper import ModelWrapper
+from learning.model_multi_wrapper import model_process_job
 from src.learning.training.training_transformer import TrainingTransformer
 from src.utilities.car_controls import CarControls, CarControlDiffs
 
 
-class Interceptor:
+class MultiInterceptor:
     def __init__(self, configuration, recorder=None):
         self.renderer = None
         self.recorder = recorder
         self.resolution = (configuration.recording_width, configuration.recording_height)
-        self.wrapped_model = ModelWrapper(configuration)
 
         self.frame = None
         self.telemetry = None
         self.expert_updates = CarControlDiffs(0, 0.0, 0.0, 0.0)
         self.car_controls = CarControls(0, 0.0, 0.0, 0.0)
-        self.predicted_updates = None
 
-        self.transformer = TrainingTransformer()
         self.recording_enabled = self.recorder is not None and configuration.recording_enabled
-        self.runtime_training_enabled = self.recorder is not None and configuration.runtime_training_enabled
-        self.aggregation_count = 0
+
+        if configuration.runtime_training_enabled:
+            self.runtime_training_enabled = True
+            self.aggregation_count = 0
+            self.transformer = TrainingTransformer()
+
+            self.parent_conn, self.child_conn = Pipe()
+            self.model_process = Process(target=model_process_job, args=(self.child_conn, configuration.map))
+            self.model_process.start()
 
     def set_renderer(self, renderer):
         self.renderer = renderer
@@ -55,39 +59,37 @@ class Interceptor:
         self.expert_updates = CarControlDiffs(car.gear, car.d_steering, car.d_throttle, car.d_braking)
         self.car_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
 
-        if self.runtime_training_enabled and self.aggregation_count > 0 and (self.aggregation_count % 500 == 0):
-            try:
-                print("Training iteration {}".format(self.aggregation_count))
-                train, test = self.transformer.transform_aggregation_into_trainables(*self.recorder.get_current_data())
-                await self.__train_in_executor(train, test)
-                # TODO better naming convention for models
-                self.wrapped_model.save_model("aggregated_model_" + str(self.aggregation_count))
-            except Exception as ex:
-                print("Aggregated training exception: {}".format(ex))
+        if self.runtime_training_enabled and self.aggregation_count > 0 and (self.aggregation_count % 1000 == 0):
+            train, test = self.transformer.transform_aggregation_to_inputs(*self.recorder.get_current_data())
+            self.__start_training_model(train, test)
 
         if self.frame is not None and self.telemetry is not None:
-            await self.__update_car_in_executor(car)
+            await self.__update_car_from_predictions(car)
 
-    async def __train_in_executor(self, train_tuple, test_tuple):
-        executor = ThreadPoolExecutor(max_workers=8)
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(executor, self.wrapped_model.fit, train_tuple, test_tuple)
+    def __start_training_model(self, train_tuple, test_tuple):
+        self.parent_conn.send((True, train_tuple, test_tuple))
 
-    async def __update_car_in_executor(self, car):
-        executor = ThreadPoolExecutor(max_workers=3)
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(executor, self.__update_car_from_predictions, car)
-
-    def __update_car_from_predictions(self, car):
+    async def __update_car_from_predictions(self, car):
         try:
-            self.predicted_updates = self.wrapped_model.predict(self.frame, self.telemetry)
+            await self.__send_data_to_model()
 
-            if self.predicted_updates is not None:
-                car.gear = self.predicted_updates.d_gear
-                car.ext_update_steering(self.predicted_updates.d_steering)
-                car.ext_update_linear_movement(self.predicted_updates.d_throttle, self.predicted_updates.d_braking)
+            wait([self.parent_conn])
+            predicted_updates = self.parent_conn.recv()
+
+            if predicted_updates is not None:
+                car.gear = predicted_updates.d_gear
+                car.ext_update_steering(predicted_updates.d_steering)
+                car.ext_update_linear_movement(predicted_updates.d_throttle, predicted_updates.d_braking)
         except Exception as ex:
-            print("Car update exception: {}".format(ex))
+            print("Prediction exception: {}".format(ex))
+
+    async def __send_data_to_model(self):
+        if self.frame is not None and self.telemetry is not None:
+            self.parent_conn.send((False, self.frame, self.telemetry))
 
     def close(self):
-        pass
+        self.model_process.terminate()
+        self.model_process.join()
+
+        self.parent_conn.close()
+        self.child_conn.close()

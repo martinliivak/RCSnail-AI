@@ -7,12 +7,10 @@ import pygame
 import logging
 from rcsnail import RCSnail
 
-from pipeline.multiprocess_interceptor import MultiInterceptor
-from src.learning.model_wrapper import ModelWrapper
+from pipeline.interceptor import MultiInterceptor
 from src.pipeline.recording.recorder import Recorder
 from src.utilities.configuration_manager import ConfigurationManager
 from src.utilities.pygame_utils import Car, PygameRenderer
-from src.pipeline.interceptor import Interceptor
 
 
 def get_training_file_name(path_to_training):
@@ -40,7 +38,6 @@ def main():
     screen = pygame.display.set_mode((config.window_width, config.window_height))
 
     recorder = Recorder(config)
-    #interceptor = Interceptor(config, recorder=recorder)
     interceptor = MultiInterceptor(config, recorder=recorder)
 
     car = Car(config, update_override=interceptor.car_update_override)

@@ -11,6 +11,7 @@ class CarControls:
     def to_list(self):
         return [self.gear, self.steering, self.throttle, self.braking]
 
+
 class CarControlDiffs:
     __slots__ = ['d_gear', 'd_steering', 'd_throttle', 'd_braking']
 
