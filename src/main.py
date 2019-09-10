@@ -1,5 +1,4 @@
 import os
-import sys
 import datetime
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
@@ -8,11 +7,10 @@ import pygame
 import logging
 from rcsnail import RCSnail
 
-from src.learning.model_wrapper import ModelWrapper
+from pipeline.interceptor import MultiInterceptor
 from src.pipeline.recording.recorder import Recorder
 from src.utilities.configuration_manager import ConfigurationManager
 from src.utilities.pygame_utils import Car, PygameRenderer
-from src.pipeline.interceptor import Interceptor
 
 
 def get_training_file_name(path_to_training):
@@ -39,11 +37,8 @@ def main():
     config = config_manager.config
     screen = pygame.display.set_mode((config.window_width, config.window_height))
 
-    wrapped_model = ModelWrapper(config)
-    wrapped_model.load_model("2019_06_28_test_2")
-
     recorder = Recorder(config)
-    interceptor = Interceptor(config, wrapped_model=wrapped_model, recorder=recorder)
+    interceptor = MultiInterceptor(config, recorder=recorder)
 
     car = Car(config, update_override=interceptor.car_update_override)
     renderer = PygameRenderer(screen, car)
@@ -66,6 +61,7 @@ def main():
         event_task.cancel()
         pygame.quit()
         asyncio.ensure_future(rcs.close_client_session())
+        interceptor.close()
 
         if recorder is not None:
             recorder.save_session()

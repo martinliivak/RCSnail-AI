@@ -9,4 +9,4 @@ class Configuration:
         elif name.contains("enabled"):
             return False
         else:
-            raise Exception("Key not in map - misconfiguration")
+            raise AttributeError(name)

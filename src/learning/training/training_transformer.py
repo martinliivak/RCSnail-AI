@@ -23,7 +23,7 @@ class TrainingTransformer:
 
         return training_df.drop(training_df.tail(1).index)
 
-    def transform_aggregation_into_trainables(self, frames_list, telemetry_list, expert_actions_list):
+    def transform_aggregation_to_inputs(self, frames_list, telemetry_list, expert_actions_list):
         x_video = np.array(frames_list)
         x_numeric = self.__create_numeric_input_df(telemetry_list)
         y = self.__create_label_df(expert_actions_list)

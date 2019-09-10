@@ -10,7 +10,7 @@ class LabelCollector:
 
     def collect_labels(self, telemetry_frame):
         # TODO add rest of diffs when full data exists
-        return telemetry_frame[[self.__mapping.d_steering]]
+        return telemetry_frame[[self.__mapping.steering]]
 
     def collect_expert_labels(self, telemetry_frame):
         # TODO add rest of diffs when full data exists, include gear
