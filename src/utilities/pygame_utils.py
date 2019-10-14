@@ -268,12 +268,19 @@ class PygameRenderer:
     def render_overlay(self, frame_size, ovl):
         if frame_size[0] != self.latest_frame.width or frame_size[1] != self.latest_frame.height:
             frame_size = (self.latest_frame.width, self.latest_frame.height)
-            ovl = pygame.Overlay(pygame.YV12_OVERLAY, frame_size)  # (320, 240))
-            ovl.set_location(pygame.Rect(0, 0, self.window_width - 20, self.window_height - 10))
-        ovl.display((self.latest_frame.planes[0], self.latest_frame.planes[1], self.latest_frame.planes[2]))
+
+        image_rgb = self.latest_frame.to_rgb()
+        image_to_ndarray = image_rgb.to_ndarray()
+        surface = pygame.surfarray.make_surface(image_to_ndarray.swapaxes(0,1))
+        height = self.window_height - 10
+        width = height * self.latest_frame.width // self.latest_frame.height
+        x = (self.window_width - 20 - width) // 2
+        y = 0
+        scaled_frame = pygame.transform.scale(surface, (width, height))
+        self.screen.blit(scaled_frame, (x, y))
 
     def handle_new_frame(self, frame):
-        self.latest_frame = frame
+            self.latest_frame = frame
 
     def handle_new_telemetry(self, telemetry):
         if self.car:
