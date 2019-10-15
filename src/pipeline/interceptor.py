@@ -98,8 +98,9 @@ class MultiInterceptor:
             self.parent_conn.send((False, self.frame, self.telemetry))
 
     def close(self):
-        self.model_process.terminate()
-        self.model_process.join()
+        if self.car_update_override:
+            self.model_process.terminate()
+            self.model_process.join()
 
-        self.parent_conn.close()
-        self.child_conn.close()
+            self.parent_conn.close()
+            self.child_conn.close()
