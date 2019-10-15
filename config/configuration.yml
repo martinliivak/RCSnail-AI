@@ -1,12 +1,12 @@
 # Constant properties
 window_width: 960
 window_height: 480
-path_to_training: "../training/"
-path_to_models: "../training/models/"
+path_to_training: "../../training/"
+path_to_models: "../../training/models/"
 recording_height: 40
 recording_width: 60
 recording_fps: 20
 # Procedural flags
 car_override_enabled: true
 recording_enabled: false
-runtime_training_enabled: true
+runtime_training_enabled: false

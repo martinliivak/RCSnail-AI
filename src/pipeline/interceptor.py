@@ -19,15 +19,17 @@ class MultiInterceptor:
         self.car_controls = CarControls(0, 0.0, 0.0, 0.0)
 
         self.recording_enabled = self.recorder is not None and configuration.recording_enabled
+        self.runtime_training_enabled = configuration.runtime_training_enabled
+        self.car_update_override = configuration.car_override_enabled
 
-        if configuration.runtime_training_enabled:
-            self.runtime_training_enabled = True
-            self.aggregation_count = 0
-            self.transformer = TrainingTransformer()
-
+        if self.car_update_override:
             self.parent_conn, self.child_conn = Pipe()
             self.model_process = Process(target=model_process_job, args=(self.child_conn, configuration.map))
             self.model_process.start()
+
+        if self.runtime_training_enabled:
+            self.aggregation_count = 0
+            self.transformer = TrainingTransformer()
 
     def set_renderer(self, renderer):
         self.renderer = renderer
@@ -64,7 +66,7 @@ class MultiInterceptor:
                 train, test = self.transformer.transform_aggregation_to_inputs(*self.recorder.get_current_data())
                 self.__start_fitting_model(train, test)
 
-            if self.frame is not None and self.telemetry is not None:
+            if self.car_update_override and self.frame is not None and self.telemetry is not None:
                 self.__update_car_from_predictions(car)
         except Exception as ex:
             print("Override exception: {}".format(ex))
@@ -92,7 +94,7 @@ class MultiInterceptor:
             print("Prediction exception: {}".format(ex))
 
     def __send_data_to_model(self):
-        if self.frame is not None and self.telemetry is not None:
+        if self.frame is not None and self.telemetry is not None and self.car_update_override:
             self.parent_conn.send((False, self.frame, self.telemetry))
 
     def close(self):
