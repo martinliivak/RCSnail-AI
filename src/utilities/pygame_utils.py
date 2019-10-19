@@ -258,20 +258,14 @@ class PygameRenderer:
             await rcs.updateControl(self.car.gear, self.car.steering, self.car.throttle, self.car.braking)
             self.screen.fill(self.black)
             if isinstance(self.latest_frame, VideoFrame):
-                executor = ThreadPoolExecutor(max_workers=16)
-                loop = asyncio.get_event_loop()
-                await loop.run_in_executor(executor, self.render_overlay, frame_size, ovl)
+                self.render_new_frames_on_screen(frame_size)
 
             await self.draw()
             pygame.display.flip()
 
-    def render_overlay(self, frame_size, ovl):
-        if frame_size[0] != self.latest_frame.width or frame_size[1] != self.latest_frame.height:
-            frame_size = (self.latest_frame.width, self.latest_frame.height)
-
-        image_rgb = self.latest_frame.to_rgb()
-        image_to_ndarray = image_rgb.to_ndarray()
-        surface = pygame.surfarray.make_surface(image_to_ndarray.swapaxes(0,1))
+    def render_new_frames_on_screen(self, frame_size):
+        image_to_ndarray = self.latest_frame.to_rgb().to_ndarray()
+        surface = pygame.surfarray.make_surface(image_to_ndarray.swapaxes(0, 1))
         height = self.window_height - 10
         width = height * self.latest_frame.width // self.latest_frame.height
         x = (self.window_width - 20 - width) // 2
@@ -280,7 +274,7 @@ class PygameRenderer:
         self.screen.blit(scaled_frame, (x, y))
 
     def handle_new_frame(self, frame):
-            self.latest_frame = frame
+        self.latest_frame = frame
 
     def handle_new_telemetry(self, telemetry):
         if self.car:
