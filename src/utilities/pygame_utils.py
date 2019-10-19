@@ -258,19 +258,20 @@ class PygameRenderer:
             await rcs.updateControl(self.car.gear, self.car.steering, self.car.throttle, self.car.braking)
             self.screen.fill(self.black)
             if isinstance(self.latest_frame, VideoFrame):
-                executor = ThreadPoolExecutor(max_workers=16)
-                loop = asyncio.get_event_loop()
-                await loop.run_in_executor(executor, self.render_overlay, frame_size, ovl)
+                self.render_new_frames_on_screen(frame_size)
 
             await self.draw()
             pygame.display.flip()
 
-    def render_overlay(self, frame_size, ovl):
-        if frame_size[0] != self.latest_frame.width or frame_size[1] != self.latest_frame.height:
-            frame_size = (self.latest_frame.width, self.latest_frame.height)
-            ovl = pygame.Overlay(pygame.YV12_OVERLAY, frame_size)  # (320, 240))
-            ovl.set_location(pygame.Rect(0, 0, self.window_width - 20, self.window_height - 10))
-        ovl.display((self.latest_frame.planes[0], self.latest_frame.planes[1], self.latest_frame.planes[2]))
+    def render_new_frames_on_screen(self, frame_size):
+        image_to_ndarray = self.latest_frame.to_rgb().to_ndarray()
+        surface = pygame.surfarray.make_surface(image_to_ndarray.swapaxes(0, 1))
+        height = self.window_height - 10
+        width = height * self.latest_frame.width // self.latest_frame.height
+        x = (self.window_width - 20 - width) // 2
+        y = 0
+        scaled_frame = pygame.transform.scale(surface, (width, height))
+        self.screen.blit(scaled_frame, (x, y))
 
     def handle_new_frame(self, frame):
         self.latest_frame = frame
