@@ -55,6 +55,7 @@ def main():
     except KeyboardInterrupt:
         print("Closing due to keyboard interrupt.")
     finally:
+        print("Closing shop.")
         queue_task.cancel()
         pygame_task.cancel()
         render_task.cancel()
@@ -62,7 +63,7 @@ def main():
         pygame.quit()
         asyncio.ensure_future(rcs.close_client_session())
         interceptor.close()
-
+        print("Shop closed.")
         if recorder is not None:
             recorder.save_session()
 

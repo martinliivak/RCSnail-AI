@@ -49,7 +49,7 @@ class MultiInterceptor:
         self.telemetry = telemetry
 
     def __convert_frame(self, frame):
-        return np.array(frame.to_image().resize(self.resolution))
+        return np.array(frame.to_image().resize(self.resolution)).astype(np.float32)
 
     def __record_state(self):
         self.recorder.record(self.frame, self.telemetry)
@@ -63,6 +63,7 @@ class MultiInterceptor:
             self.car_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
 
             if self.runtime_training_enabled and self.aggregation_count > 0 and ((self.aggregation_count // 2) % 200) == 0:
+                print("training engaged")
                 train, test = self.transformer.transform_aggregation_to_inputs(*self.recorder.get_current_data())
                 self.__start_fitting_model(train, test)
 
@@ -99,8 +100,7 @@ class MultiInterceptor:
 
     def close(self):
         if self.model_override_enabled:
+            self.model_process.join(5.0)
             self.model_process.terminate()
-            self.model_process.join()
-
             self.child_conn.close()
             self.parent_conn.close()

@@ -14,16 +14,28 @@ def model_process_job(connection: Connection, configuration_map: map):
     print("Hello from model process")
     wrapped_model = ModelMultiWrapper(connection, Configuration(configuration_map))
 
-    while True:
-        wait([connection], timeout=60)
-        data = connection.recv()
-        if data[0]:
-            print("Training...")
-            wrapped_model.fit(data[1], data[2])
-            print("Training completed")
-        else:
-            predicted_updates = wrapped_model.predict(data[1], data[2])
-            connection.send(predicted_updates)
+    try:
+        while True:
+            wait([connection], timeout=60)
+            data_available = connection.poll(10.0)
+
+            if data_available:
+                data = connection.recv()
+
+                if data[0]:
+                    print("Training...")
+                    wrapped_model.fit(data[1], data[2])
+                    print("Training completed")
+                else:
+                    predicted_updates = wrapped_model.predict(data[1], data[2])
+                    connection.send(predicted_updates)
+            else:
+                break
+
+        connection.close()
+    except Exception as ex:
+        connection.close()
+        print("Model process exception: {}".format(ex))
 
 
 class ModelMultiWrapper:
