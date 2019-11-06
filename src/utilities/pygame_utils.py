@@ -2,7 +2,6 @@ import asyncio
 import time
 import pygame
 
-from concurrent.futures import ThreadPoolExecutor
 from av import VideoFrame
 
 
@@ -40,7 +39,7 @@ class Car:
         # telemetry
         self.batVoltage_mV = 0
 
-        self.__override_enabled = update_override is not None and configuration.car_override_enabled
+        self.__override_enabled = update_override is not None and configuration.model_override_enabled
         self.__update_override = update_override
 
     async def update(self, dt):

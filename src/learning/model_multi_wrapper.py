@@ -40,7 +40,7 @@ class ModelMultiWrapper:
         return create_multi_model(mlp, cnn)
 
     def load_model(self, model_file: str):
-        from keras.models import load_model
+        from tensorflow.keras.models import load_model
 
         self.model = load_model(self.__path_to_models + model_file + ".h5")
         print("Loaded " + model_file)
@@ -51,7 +51,7 @@ class ModelMultiWrapper:
 
     def fit(self, train_tuple, test_tuple, epochs=1, batch_size=20, verbose=0):
         try:
-            from keras.backend import clear_session
+            from tensorflow.keras.backend import clear_session
 
             train_frames, train_numeric_inputs, train_labels = train_tuple
             test_frames, test_numeric_inputs, test_labels = test_tuple
