@@ -1,14 +1,19 @@
 import numpy as np
-from multiprocessing import Process, Pipe
-from multiprocessing.connection import wait
+from multiprocessing import Process, Queue, Event
+from time import sleep
+from queue import Empty
+import logging
+
 
 from learning.model_multi_wrapper import model_process_job
 from src.learning.training.training_transformer import TrainingTransformer
 from src.utilities.car_controls import CarControls, CarControlDiffs
+from utilities.message import Message
 
 
 class MultiInterceptor:
     def __init__(self, configuration, recorder=None):
+        self.kill_event = Event()
         self.renderer = None
         self.recorder = recorder
         self.resolution = (configuration.recording_width, configuration.recording_height)
@@ -23,8 +28,11 @@ class MultiInterceptor:
         self.model_override_enabled = configuration.model_override_enabled
 
         if self.model_override_enabled:
-            self.parent_conn, self.child_conn = Pipe()
-            self.model_process = Process(target=model_process_job, args=(self.child_conn, configuration.map))
+            self.model_queue = Queue()
+            self.prediction_queue = Queue()
+            queues = [self.model_queue, self.prediction_queue]
+            events = [self.kill_event]
+            self.model_process = Process(target=model_process_job, args=(queues, configuration.map, events))
             self.model_process.start()
 
         if self.runtime_training_enabled:
@@ -73,34 +81,50 @@ class MultiInterceptor:
             print("Override exception: {}".format(ex))
 
     def __start_fitting_model(self, train_tuple, test_tuple):
-        self.parent_conn.send((True, train_tuple, test_tuple))
+        if not self.kill_event.is_set():
+            self.model_queue.put(Message("training", (train_tuple, test_tuple)))
 
     def __update_car_from_predictions(self, car):
         try:
             self.__send_data_to_model()
+            predicted_updates = self.prediction_queue.get(block=True, timeout=1)
 
-            if self.parent_conn.poll(1):
-                predicted_updates = self.parent_conn.recv()
-
-                if predicted_updates is not None:
-                    car.gear = predicted_updates.d_gear
-                    car.ext_update_steering(predicted_updates.d_steering)
-                    car.ext_update_linear_movement(predicted_updates.d_throttle, predicted_updates.d_braking)
-            else:
-                # TODO question yourself if this is necessary and sane
-                car.gear = self.expert_updates.d_gear
-                car.ext_update_steering(self.expert_updates.d_steering)
-                car.ext_update_linear_movement(self.expert_updates.d_throttle, self.expert_updates.d_braking)
+            if predicted_updates is not None:
+                car.gear = predicted_updates.d_gear
+                car.ext_update_steering(predicted_updates.d_steering)
+                car.ext_update_linear_movement(predicted_updates.d_throttle, predicted_updates.d_braking)
         except Exception as ex:
             print("Prediction exception: {}".format(ex))
 
     def __send_data_to_model(self):
-        if self.frame is not None and self.telemetry is not None and self.model_override_enabled:
-            self.parent_conn.send((False, self.frame, self.telemetry))
+        if not self.kill_event.is_set():
+            self.model_queue.put(Message("predicting", (self.frame, self.telemetry)))
 
     def close(self):
+        self.kill_event.set()
+
         if self.model_override_enabled:
-            self.model_process.join(5.0)
+            self.__drain_queue(self.model_queue)
+            self.__drain_queue(self.prediction_queue)
+
+            self.__close_queue(self.model_queue)
+            self.__close_queue(self.prediction_queue)
+
+            self.__close_process()
+
+    def __close_process(self):
+        self.model_process.join(5.0)
+
+        if self.model_process.is_alive():
             self.model_process.terminate()
-            self.child_conn.close()
-            self.parent_conn.close()
+
+    def __drain_queue(self, queue: Queue):
+        while not queue.empty():
+            try:
+                queue.get(block=False)
+            except Empty:
+                break
+
+    def __close_queue(self, queue: Queue):
+        queue.close()
+        queue.join_thread()

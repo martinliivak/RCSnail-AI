@@ -184,7 +184,7 @@ class PygameRenderer:
             # print("event", event)
         asyncio.get_event_loop().stop()
 
-    async def draw(self):
+    def draw(self):
         # Steering gauge:
         if self.car.steering < 0:
             R = pygame.Rect((self.car.steering + 1.0) / 2.0 * self.window_width,
@@ -259,7 +259,7 @@ class PygameRenderer:
             if isinstance(self.latest_frame, VideoFrame):
                 self.render_new_frames_on_screen(frame_size)
 
-            await self.draw()
+            self.draw()
             pygame.display.flip()
 
     def render_new_frames_on_screen(self, frame_size):
