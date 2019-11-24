@@ -2,37 +2,53 @@ import datetime
 import os
 
 import numpy as np
-from multiprocessing.connection import Connection, wait
+from multiprocessing import Queue, Event
+from queue import Empty
+from time import sleep
+import logging
 
 from learning.models import create_multi_model, create_mlp, create_cnn
 from src.learning.training.car_mapping import CarMapping
 from src.utilities.car_controls import CarControlDiffs
 from utilities.configuration import Configuration
+from utilities.message import Message
 
 
-def model_process_job(connection: Connection, configuration_map: map):
+def model_process_job(queues: list, configuration_map: map, events: list):
     print("Hello from model process")
-    wrapped_model = ModelMultiWrapper(connection, Configuration(configuration_map))
+    wrapped_model = ModelMultiWrapper(Configuration(configuration_map))
 
-    while True:
-        wait([connection], timeout=60)
-        data = connection.recv()
-        if data[0]:
-            print("Training...")
-            wrapped_model.fit(data[1], data[2])
-            print("Training completed")
-        else:
-            predicted_updates = wrapped_model.predict(data[1], data[2])
-            connection.send(predicted_updates)
+    queue: Queue = queues[0]
+    prediction_queue: Queue = queues[1]
+
+    kill_event: Event = events[0]
+
+    while not kill_event.is_set():
+        try:
+            if queue.empty():
+                continue
+
+            message: Message = queue.get(block=True, timeout=2)
+
+            if message.name == "training":
+                print("Training...")
+                (x, y) = message.data
+                print(x.shape)
+                print(y.shape)
+                wrapped_model.fit(*message.data)
+                print("Training completed")
+            if message.name == "predicting":
+                predicted_updates = wrapped_model.predict(*message.data)
+                prediction_queue.put(predicted_updates)
+        except Exception as ex:
+            print("Model process exception: {}".format(ex))
 
 
 class ModelMultiWrapper:
-    def __init__(self, connection: Connection, configuration: Configuration):
+    def __init__(self, configuration: Configuration):
         self.model = self.__create_new_model()
         self.__mapping = CarMapping()
         self.__path_to_models: str = configuration.path_to_models
-
-        self.__connection: Connection = connection
 
     def __create_new_model(self):
         mlp = create_mlp(regress=False)
@@ -40,7 +56,7 @@ class ModelMultiWrapper:
         return create_multi_model(mlp, cnn)
 
     def load_model(self, model_file: str):
-        from keras.models import load_model
+        from tensorflow.keras.models import load_model
 
         self.model = load_model(self.__path_to_models + model_file + ".h5")
         print("Loaded " + model_file)
@@ -51,7 +67,7 @@ class ModelMultiWrapper:
 
     def fit(self, train_tuple, test_tuple, epochs=1, batch_size=20, verbose=0):
         try:
-            from keras.backend import clear_session
+            from tensorflow.keras.backend import clear_session
 
             train_frames, train_numeric_inputs, train_labels = train_tuple
             test_frames, test_numeric_inputs, test_labels = test_tuple

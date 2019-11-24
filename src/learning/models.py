@@ -1,9 +1,9 @@
 
 def create_multi_model(mlp, cnn):
-    from keras.layers.core import Dense
-    from keras.layers import concatenate
-    from keras.models import Model
-    from keras.optimizers import Adam
+    from tensorflow.keras.layers import Dense
+    from tensorflow.keras.layers import concatenate
+    from tensorflow.keras.models import Model
+    from tensorflow.keras.optimizers import Adam
 
     combined_input = concatenate([mlp.output, cnn.output])
 
@@ -18,9 +18,9 @@ def create_multi_model(mlp, cnn):
 
 
 def create_mlp(input_shape=(1,), regress=False):
-    from keras.layers import Input
-    from keras.layers.core import Dense
-    from keras.models import Model
+    from tensorflow.keras.layers import Input
+    from tensorflow.keras.layers import Dense
+    from tensorflow.keras.models import Model
 
     """More-less copied from https://www.pyimagesearch.com/2019/02/04/keras-multiple-inputs-and-mixed-data/"""
     inputs = Input(shape=input_shape)
@@ -33,15 +33,15 @@ def create_mlp(input_shape=(1,), regress=False):
 
 
 def create_cnn(input_shape=(40, 60, 3), filters=(16, 32, 64), regress=False):
-    from keras.layers.normalization import BatchNormalization
-    from keras.layers.convolutional import Conv2D
-    from keras.layers.convolutional import MaxPooling2D
-    from keras.layers.core import Activation
-    from keras.layers.core import Dense
-    from keras.layers.core import Dropout
-    from keras.layers import Flatten
-    from keras.layers import Input
-    from keras.models import Model
+    from tensorflow.keras.layers import BatchNormalization
+    from tensorflow.keras.layers import Conv2D
+    from tensorflow.keras.layers import MaxPooling2D
+    from tensorflow.keras.layers import Activation
+    from tensorflow.keras.layers import Dense
+    from tensorflow.keras.layers import Dropout
+    from tensorflow.keras.layers import Flatten
+    from tensorflow.keras.layers import Input
+    from tensorflow.keras.models import Model
 
 
     """More-less copied from https://www.pyimagesearch.com/2019/02/04/keras-multiple-inputs-and-mixed-data/"""

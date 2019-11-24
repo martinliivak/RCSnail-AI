@@ -108,3 +108,4 @@ venv.bak/
 
 # IntelliJ
 .idea/
+./.idea/

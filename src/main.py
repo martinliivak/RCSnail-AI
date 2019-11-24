@@ -2,6 +2,7 @@ import os
 import datetime
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from time import sleep
 
 import pygame
 import logging
@@ -22,7 +23,7 @@ def get_training_file_name(path_to_training):
 
 def main():
     print('RCSnail manual drive demo')
-    logging.basicConfig(level=logging.WARNING, format='%(asctime)s %(message)s')
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
     username = os.getenv('RCS_USERNAME', '')
     password = os.getenv('RCS_PASSWORD', '')
     rcs = RCSnail()
@@ -55,6 +56,7 @@ def main():
     except KeyboardInterrupt:
         print("Closing due to keyboard interrupt.")
     finally:
+        print("Closing shop.")
         queue_task.cancel()
         pygame_task.cancel()
         render_task.cancel()
@@ -62,10 +64,12 @@ def main():
         pygame.quit()
         asyncio.ensure_future(rcs.close_client_session())
         interceptor.close()
-
         if recorder is not None:
             recorder.save_session()
+
+        print("Shop closed.")
 
 
 if __name__ == "__main__":
     main()
+    sleep(1)

@@ -2,7 +2,6 @@ import asyncio
 import time
 import pygame
 
-from concurrent.futures import ThreadPoolExecutor
 from av import VideoFrame
 
 
@@ -40,7 +39,7 @@ class Car:
         # telemetry
         self.batVoltage_mV = 0
 
-        self.__override_enabled = update_override is not None and configuration.car_override_enabled
+        self.__override_enabled = update_override is not None and configuration.model_override_enabled
         self.__update_override = update_override
 
     async def update(self, dt):
@@ -185,7 +184,7 @@ class PygameRenderer:
             # print("event", event)
         asyncio.get_event_loop().stop()
 
-    async def draw(self):
+    def draw(self):
         # Steering gauge:
         if self.car.steering < 0:
             R = pygame.Rect((self.car.steering + 1.0) / 2.0 * self.window_width,
@@ -260,7 +259,7 @@ class PygameRenderer:
             if isinstance(self.latest_frame, VideoFrame):
                 self.render_new_frames_on_screen(frame_size)
 
-            await self.draw()
+            self.draw()
             pygame.display.flip()
 
     def render_new_frames_on_screen(self, frame_size):
