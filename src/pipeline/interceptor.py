@@ -71,9 +71,14 @@ class MultiInterceptor:
             self.car_controls = CarControls(car.gear, car.steering, car.throttle, car.braking)
 
             if self.runtime_training_enabled and self.aggregation_count > 0 and ((self.aggregation_count // 2) % 200) == 0:
-                print("training engaged")
-                train, test = self.transformer.transform_aggregation_to_inputs(*self.recorder.get_current_data())
-                self.__start_fitting_model(train, test)
+                frames, telemetry, expert_actions = self.recorder.get_current_data()
+                print(len(frames))
+                print(len(telemetry))
+                print(len(expert_actions))
+
+                if len(frames) > 2 and len(telemetry) > 2 and len(expert_actions) > 2:
+                    train, test = self.transformer.transform_aggregation_to_inputs(frames, telemetry, expert_actions)
+                    self.__start_fitting_model(train, test)
 
             if self.model_override_enabled and self.frame is not None and self.telemetry is not None:
                 self.__update_car_from_predictions(car)
