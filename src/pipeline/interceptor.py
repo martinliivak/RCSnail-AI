@@ -1,11 +1,8 @@
 import numpy as np
 from multiprocessing import Process, Queue, Event
-from time import sleep
 from queue import Empty
-import logging
 
-
-from learning.model_multi_wrapper import model_process_job
+from model_process.model_multi_wrapper import model_process_job
 from src.learning.training.training_transformer import TrainingTransformer
 from src.utilities.car_controls import CarControls, CarControlDiffs
 from utilities.message import Message

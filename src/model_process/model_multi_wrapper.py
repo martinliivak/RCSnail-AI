@@ -18,17 +18,17 @@ def model_process_job(queues: list, configuration_map: map, events: list):
     print("Hello from model process")
     wrapped_model = ModelMultiWrapper(Configuration(configuration_map))
 
-    queue: Queue = queues[0]
+    data_queue: Queue = queues[0]
     prediction_queue: Queue = queues[1]
 
     kill_event: Event = events[0]
 
     while not kill_event.is_set():
         try:
-            if queue.empty():
+            if data_queue.empty():
                 continue
 
-            message: Message = queue.get(block=True, timeout=2)
+            message: Message = data_queue.get(block=True, timeout=2)
 
             if message.name == "training":
                 print("Training...")
