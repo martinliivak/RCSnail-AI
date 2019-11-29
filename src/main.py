@@ -2,8 +2,9 @@ import os
 import datetime
 import asyncio
 import logging
+import numpy as np
 import zmq
-from zmq.asyncio import Context
+from zmq.asyncio import Context, Socket
 
 from src.pipeline.recording.recorder import Recorder
 from src.utilities.configuration_manager import ConfigurationManager
@@ -19,36 +20,45 @@ def get_training_file_name(path_to_training):
 async def main(context: Context):
     print("started")
     config_manager = ConfigurationManager()
-    config = config_manager.config
+    recorder = Recorder(config_manager.config)
 
-    recorder = Recorder(config)
-
-    subscriber = await initialize_synced_sub(context)
+    data_queue = await initialize_synced_sub(context)
+    count = 0
 
     while True:
-        msg = await subscriber.recv()
+        msg = await recv_array(queue=data_queue)
         print(msg)
-        if msg == b'END':
+
+        count += 1
+        if count > 9:
             break
 
+    data_queue.close()
     if recorder is not None:
         recorder.save_session()
 
 
 async def initialize_synced_sub(context: Context):
-    subscriber = context.socket(zmq.SUB)
-    subscriber.connect('tcp://localhost:5561')
-    # TODO add possible topics
-    subscriber.setsockopt(zmq.SUBSCRIBE, b'')
+    queue = context.socket(zmq.SUB)
+    queue.connect('tcp://localhost:5561')
+    queue.setsockopt(zmq.SUBSCRIBE, b'')
 
     synchronizer = context.socket(zmq.REQ)
     synchronizer.connect('tcp://localhost:5562')
     synchronizer.send(b'')
-    sync_conf_msg = await synchronizer.recv()
-    print(sync_conf_msg)
+    await synchronizer.recv()
     synchronizer.close()
 
-    return subscriber
+    return queue
+
+
+async def recv_array(queue: Socket, flags=0, copy=True, track=False):
+    """recv a numpy array"""
+    metadata = await queue.recv_json(flags=flags)
+    msg = await queue.recv(flags=flags, copy=copy, track=track)
+    buf = memoryview(msg)
+    data = np.frombuffer(buf, dtype=metadata['dtype'])
+    return data.reshape(metadata['shape'])
 
 
 if __name__ == "__main__":
