@@ -5,7 +5,6 @@ import logging
 import zmq
 from zmq.asyncio import Context
 
-from pipeline.interceptor import MultiInterceptor
 from src.pipeline.recording.recorder import Recorder
 from src.utilities.configuration_manager import ConfigurationManager
 
@@ -23,7 +22,6 @@ async def main(context: Context):
     config = config_manager.config
 
     recorder = Recorder(config)
-    interceptor = MultiInterceptor(config, recorder=recorder)
 
     subscriber = await initialize_synced_sub(context)
 
@@ -33,7 +31,6 @@ async def main(context: Context):
         if msg == b'END':
             break
 
-    interceptor.close()
     if recorder is not None:
         recorder.save_session()
 
@@ -44,11 +41,12 @@ async def initialize_synced_sub(context: Context):
     # TODO add possible topics
     subscriber.setsockopt(zmq.SUBSCRIBE, b'')
 
-    sync_client = context.socket(zmq.REQ)
-    sync_client.connect('tcp://localhost:5562')
-    sync_client.send(b'')
-    sync_conf_msg = await sync_client.recv()
+    synchronizer = context.socket(zmq.REQ)
+    synchronizer.connect('tcp://localhost:5562')
+    synchronizer.send(b'')
+    sync_conf_msg = await synchronizer.recv()
     print(sync_conf_msg)
+    synchronizer.close()
 
     return subscriber
 
