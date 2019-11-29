@@ -24,14 +24,6 @@ class MultiInterceptor:
         self.runtime_training_enabled = configuration.runtime_training_enabled
         self.model_override_enabled = configuration.model_override_enabled
 
-        if self.model_override_enabled:
-            self.model_queue = Queue()
-            self.prediction_queue = Queue()
-            queues = [self.model_queue, self.prediction_queue]
-            events = [self.kill_event]
-            self.model_process = Process(target=model_process_job, args=(queues, configuration.map, events))
-            self.model_process.start()
-
         if self.runtime_training_enabled:
             self.aggregation_count = 0
             self.transformer = TrainingTransformer()
@@ -75,7 +67,7 @@ class MultiInterceptor:
 
                 if len(frames) > 2 and len(telemetry) > 2 and len(expert_actions) > 2:
                     train, test = self.transformer.transform_aggregation_to_inputs(frames, telemetry, expert_actions)
-                    self.__start_fitting_model(train, test)
+                    #self.__start_fitting_model(train, test)
 
             if self.model_override_enabled and self.frame is not None and self.telemetry is not None:
                 self.__update_car_from_predictions(car)
@@ -88,13 +80,14 @@ class MultiInterceptor:
 
     def __update_car_from_predictions(self, car):
         try:
-            self.__send_data_to_model()
-            predicted_updates = self.prediction_queue.get(block=True, timeout=1)
-
-            if predicted_updates is not None:
-                car.gear = predicted_updates.d_gear
-                car.ext_update_steering(predicted_updates.d_steering)
-                car.ext_update_linear_movement(predicted_updates.d_throttle, predicted_updates.d_braking)
+            pass
+#            self.__send_data_to_model()
+#            predicted_updates = self.prediction_queue.get(block=True, timeout=1)
+#
+#            if predicted_updates is not None:
+#                car.gear = predicted_updates.d_gear
+#                car.ext_update_steering(predicted_updates.d_steering)
+#                car.ext_update_linear_movement(predicted_updates.d_throttle, predicted_updates.d_braking)
         except Exception as ex:
             print("Prediction exception: {}".format(ex))
 
@@ -104,29 +97,3 @@ class MultiInterceptor:
 
     def close(self):
         self.kill_event.set()
-
-        if self.model_override_enabled:
-            self.__drain_queue(self.model_queue)
-            self.__drain_queue(self.prediction_queue)
-
-            self.__close_queue(self.model_queue)
-            self.__close_queue(self.prediction_queue)
-
-            self.__close_process()
-
-    def __close_process(self):
-        self.model_process.join(5.0)
-
-        if self.model_process.is_alive():
-            self.model_process.terminate()
-
-    def __drain_queue(self, queue: Queue):
-        while not queue.empty():
-            try:
-                queue.get(block=False)
-            except Empty:
-                break
-
-    def __close_queue(self, queue: Queue):
-        queue.close()
-        queue.join_thread()
