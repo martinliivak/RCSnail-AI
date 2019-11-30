@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from commons.configuration_manager import ConfigurationManager
 from sklearn.model_selection import train_test_split
 
 from src.learning.model_wrapper import ModelWrapper
@@ -8,8 +9,6 @@ from src.learning.models import create_cnn, create_mlp, create_multi_model
 from src.learning.training.label_collector import LabelCollector
 from src.learning.training.training_file_reader import TrainingFileReader
 from src.learning.training.training_transformer import TrainingTransformer
-from utilities.configuration import Configuration
-from utilities.configuration_manager import ConfigurationManager
 
 filename = "2019_08_13_test_20"
 

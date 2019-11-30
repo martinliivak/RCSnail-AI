@@ -1,3 +1,6 @@
+# ZMQ properties
+data_queue_port: 5551
+controls_queue_port: 5552
 # Constant properties
 window_width: 960
 window_height: 480
