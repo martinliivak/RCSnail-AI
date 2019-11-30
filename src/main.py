@@ -5,7 +5,7 @@ import logging
 import zmq
 from zmq.asyncio import Context, Socket
 
-from commons.common_zmq import recv_array, initialize_synced_sub
+from commons.common_zmq import recv_array_with_json, initialize_synced_sub, initialize_synced_pubs
 from commons.configuration_manager import ConfigurationManager
 
 from src.pipeline.recording.recorder import Recorder
@@ -20,14 +20,18 @@ def get_training_file_name(path_to_training):
 
 async def main(context: Context):
     config_manager = ConfigurationManager()
-    recorder = Recorder(config_manager.config)
+    config = config_manager.config
+    recorder = Recorder(config)
 
     data_queue = context.socket(zmq.SUB)
-    await initialize_synced_sub(context, data_queue, config_manager.config.data_queue_port)
-    count = 0
+    await initialize_synced_sub(context, data_queue, config.data_queue_port)
 
+    #controls_queue = context.socket(zmq.PUB)
+    #initialize_synced_pubs(context, controls_queue, config.controls_queue_port)
+
+    count = 0
     while True:
-        msg = await recv_array(queue=data_queue)
+        msg = await recv_array_with_json(queue=data_queue)
         print(msg)
 
         count += 1
@@ -35,6 +39,7 @@ async def main(context: Context):
             break
 
     data_queue.close()
+    #controls_queue.close()
     if recorder is not None:
         recorder.save_session()
 
