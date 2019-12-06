@@ -2,10 +2,11 @@ import os
 import datetime
 import asyncio
 import logging
+import signal
 import zmq
 from zmq.asyncio import Context, Socket
 
-from commons.common_zmq import recv_array_with_json, initialize_synced_sub, initialize_synced_pubs
+from commons.common_zmq import recv_array_with_json, initialize_synced_sub, initialize_synced_pub
 from commons.configuration_manager import ConfigurationManager
 
 from src.pipeline.recording.recorder import Recorder
@@ -24,39 +25,41 @@ async def main(context: Context):
     recorder = Recorder(config)
 
     data_queue = context.socket(zmq.SUB)
-    await initialize_synced_sub(context, data_queue, config.data_queue_port)
-
     #controls_queue = context.socket(zmq.PUB)
-    #initialize_synced_pubs(context, controls_queue, config.controls_queue_port)
 
-    count = 0
-    while True:
-        msg = await recv_array_with_json(queue=data_queue)
-        print(msg)
+    try:
+        await initialize_synced_sub(context, data_queue, config.data_queue_port)
+        #initialize_synced_pub(context, controls_queue, config.controls_queue_port)
 
-        count += 1
-        if count > 9:
-            break
+        while True:
+            frame, telemetry = await recv_array_with_json(queue=data_queue)
+            recorder.record(frame, telemetry)
+            print(telemetry)
+            print(frame.shape)
+    finally:
+        data_queue.close()
+        #controls_queue.close()
+        if recorder is not None:
+            recorder.save_session()
 
-    data_queue.close()
-    #controls_queue.close()
-    if recorder is not None:
-        recorder.save_session()
+
+def shutdown(loop):
+    for task in asyncio.Task.all_tasks(loop):
+        task.cancel()
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
-    event_loop = asyncio.get_event_loop()
+
+    loop = asyncio.get_event_loop()
+    loop.add_signal_handler(signal.SIGINT, shutdown, loop)
+    loop.add_signal_handler(signal.SIGTERM, shutdown, loop)
 
     context = zmq.asyncio.Context()
-    main_task = asyncio.ensure_future(main(context), loop=event_loop)
-
     try:
-        event_loop.run_forever()
-    except KeyboardInterrupt:
-        print('Interrupted')
+        loop.run_until_complete(main(context))
+    except Exception as ex:
+        logging.error("Interrupted base")
     finally:
-        # TODO figure out how to come out of the task and terminate gracefully
+        loop.close()
         context.destroy()
-        main_task.cancel()
-        event_loop.close()

@@ -1,3 +1,5 @@
+import logging
+
 import cv2
 import json
 import os
@@ -41,10 +43,10 @@ class Recorder:
         assert session_length == len(self.session_frames), "Video and telemetry sizes are not identical"
 
         if session_length <= 0:
-            print("Nothing to record, closing.")
+            logging.info("Nothing to record, closing.")
             return
 
-        print("Number of training instances to be saved: " + str(session_length))
+        logging.info("Number of training instances to be saved: " + str(session_length))
 
         with open(self.training_session + '.csv', 'w') as file:
             out = cv2.VideoWriter(self.training_session + ".avi",
@@ -58,4 +60,4 @@ class Recorder:
                     out.write(self.session_frames[i])
 
             out.release()
-        print("Telemetry and video saved successfully.")
+        logging.info("Telemetry and video saved successfully.")
