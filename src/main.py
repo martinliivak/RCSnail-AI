@@ -25,11 +25,11 @@ async def main(context: Context):
     recorder = Recorder(config)
 
     data_queue = context.socket(zmq.SUB)
-    #controls_queue = context.socket(zmq.PUB)
+    controls_queue = context.socket(zmq.PUB)
 
     try:
         await initialize_synced_sub(context, data_queue, config.data_queue_port)
-        #initialize_synced_pub(context, controls_queue, config.controls_queue_port)
+        await initialize_synced_pub(context, controls_queue, config.controls_queue_port)
 
         while True:
             frame, telemetry = await recv_array_with_json(queue=data_queue)
