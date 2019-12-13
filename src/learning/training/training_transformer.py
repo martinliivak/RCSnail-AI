@@ -23,6 +23,17 @@ class TrainingTransformer:
 
         return training_df.drop(training_df.tail(1).index)
 
+    def transform_aggregation_to_inputs(self, frames_list, telemetry_list):
+        x_video = np.array(frames_list)
+        x_numeric = self.__create_numeric_input_df(telemetry_list)
+        # TODO shift labels by one
+        y = self.__create_label_df(self.__collector.collect_labels(telemetry_list))
+
+        video_train, video_test, numeric_train, numeric_test, y_train, y_test = train_test_split(
+            x_video, x_numeric, y, test_size=0.2)
+
+        return (video_train, numeric_train, y_train), (video_test, numeric_test, y_test)
+
     def transform_aggregation_to_inputs(self, frames_list, telemetry_list, expert_actions_list):
         x_video = np.array(frames_list)
         x_numeric = self.__create_numeric_input_df(telemetry_list)

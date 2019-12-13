@@ -9,6 +9,8 @@ from zmq.asyncio import Context, Socket
 from commons.common_zmq import recv_array_with_json, initialize_synced_sub, initialize_synced_pub
 from commons.configuration_manager import ConfigurationManager
 
+from learning.model_wrapper import ModelWrapper
+from learning.training.training_transformer import TrainingTransformer
 from src.pipeline.recording.recorder import Recorder
 
 
@@ -23,6 +25,7 @@ async def main(context: Context):
     config_manager = ConfigurationManager()
     config = config_manager.config
     recorder = Recorder(config)
+    transformer = TrainingTransformer()
 
     data_queue = context.socket(zmq.SUB)
     controls_queue = context.socket(zmq.PUB)
@@ -31,19 +34,39 @@ async def main(context: Context):
         await initialize_synced_sub(context, data_queue, config.data_queue_port)
         await initialize_synced_pub(context, controls_queue, config.controls_queue_port)
 
+        model = ModelWrapper(config)
+        turbo_count = 0
+
         while True:
             frame, telemetry = await recv_array_with_json(queue=data_queue)
             recorder.record(frame, telemetry)
-            print(telemetry)
-            print(frame.shape)
+            turbo_count += 1
+
+            if turbo_count % 200 == 0:
+                await fitting_model(model, recorder, transformer)
+
+            prediction = model.predict(frame, telemetry)
     finally:
         data_queue.close()
-        #controls_queue.close()
+        controls_queue.close()
+
         if recorder is not None:
             recorder.save_session()
 
 
-def shutdown(loop):
+async def fitting_model(model, recorder, transformer):
+    print("fitting")
+    try:
+        frames, telemetry, expert_actions = recorder.get_current_data()
+        # TODO expert actions instead of telemetry as labels
+        train, test = transformer.transform_aggregation_to_inputs(frames, telemetry, telemetry)
+        model.fit(train, test)
+        print("fitting done")
+    except Exception as ex:
+        print(ex)
+
+
+def cancel_tasks(loop):
     for task in asyncio.Task.all_tasks(loop):
         task.cancel()
 
@@ -52,8 +75,8 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 
     loop = asyncio.get_event_loop()
-    loop.add_signal_handler(signal.SIGINT, shutdown, loop)
-    loop.add_signal_handler(signal.SIGTERM, shutdown, loop)
+    loop.add_signal_handler(signal.SIGINT, cancel_tasks, loop)
+    loop.add_signal_handler(signal.SIGTERM, cancel_tasks, loop)
 
     context = zmq.asyncio.Context()
     try:
