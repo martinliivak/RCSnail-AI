@@ -3,6 +3,7 @@ import datetime
 import asyncio
 import logging
 import signal
+import numpy as np
 import zmq
 from zmq.asyncio import Context, Socket
 
@@ -31,21 +32,33 @@ async def main(context: Context):
     controls_queue = context.socket(zmq.PUB)
 
     try:
-        await initialize_synced_sub(context, data_queue, config.data_queue_port)
-        await initialize_synced_pub(context, controls_queue, config.controls_queue_port)
-
         model = ModelWrapper(config)
         turbo_count = 0
+        dagger_iteration = 1
+
+        await initialize_synced_sub(context, data_queue, config.data_queue_port)
+        await initialize_synced_pub(context, controls_queue, config.controls_queue_port)
 
         while True:
             frame, telemetry = await recv_array_with_json(queue=data_queue)
             recorder.record(frame, telemetry)
             turbo_count += 1
 
-            if turbo_count % 200 == 0:
+            if turbo_count % 500 == 0:
+                print(turbo_count)
                 await fitting_model(model, recorder, transformer)
+                dagger_iteration += 1
 
-            prediction = model.predict(frame, telemetry)
+            prob = np.random.random()
+            if prob > 0:
+                prediction = model.predict(frame, telemetry)
+            else:
+                prediction = dict(yo="dingles")
+
+            try:
+                controls_queue.send_json(prediction.to_dict())
+            except Exception as ex:
+                print(ex)
     finally:
         data_queue.close()
         controls_queue.close()
@@ -55,13 +68,14 @@ async def main(context: Context):
 
 
 async def fitting_model(model, recorder, transformer):
-    print("fitting")
+    logging.info("fitting")
     try:
         frames, telemetry, expert_actions = recorder.get_current_data()
+        print(len(frames))
         # TODO expert actions instead of telemetry as labels
         train, test = transformer.transform_aggregation_to_inputs(frames, telemetry, telemetry)
         model.fit(train, test)
-        print("fitting done")
+        logging.info("fitting done")
     except Exception as ex:
         print(ex)
 

@@ -23,3 +23,6 @@ class CarControlDiffs:
 
     def to_list(self):
         return [self.d_gear, self.d_steering, self.d_throttle, self.d_braking]
+
+    def to_dict(self):
+        return {element: getattr(self, element, 0) for element in self.__slots__}
