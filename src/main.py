@@ -5,14 +5,14 @@ import logging
 import signal
 import numpy as np
 import zmq
-from zmq.asyncio import Context, Socket
+from zmq.asyncio import Context
 
 from commons.common_zmq import recv_array_with_json, initialize_synced_sub, initialize_synced_pub
 from commons.configuration_manager import ConfigurationManager
 
 from learning.model_wrapper import ModelWrapper
 from learning.training.training_transformer import TrainingTransformer
-from src.pipeline.recording.recorder import Recorder
+from utilities.recorder import Recorder
 
 
 def get_training_file_name(path_to_training):
