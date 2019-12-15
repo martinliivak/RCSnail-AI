@@ -1,17 +1,18 @@
 import os
 import datetime
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
-from time import sleep
-
-import pygame
 import logging
-from rcsnail import RCSnail
+import signal
+import numpy as np
+import zmq
+from zmq.asyncio import Context, Socket
 
-from pipeline.interceptor import MultiInterceptor
+from commons.common_zmq import recv_array_with_json, initialize_synced_sub, initialize_synced_pub
+from commons.configuration_manager import ConfigurationManager
+
+from learning.model_wrapper import ModelWrapper
+from learning.training.training_transformer import TrainingTransformer
 from src.pipeline.recording.recorder import Recorder
-from src.utilities.configuration_manager import ConfigurationManager
-from src.utilities.pygame_utils import Car, PygameRenderer
 
 
 def get_training_file_name(path_to_training):
@@ -21,55 +22,81 @@ def get_training_file_name(path_to_training):
     return date + "_test_" + str(int(len(files_from_same_date) / 2 + 1))
 
 
-def main():
-    print('RCSnail manual drive demo')
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
-    username = os.getenv('RCS_USERNAME', '')
-    password = os.getenv('RCS_PASSWORD', '')
-    rcs = RCSnail()
-    rcs.sign_in_with_email_and_password(username, password)
-
-    loop = asyncio.get_event_loop()
-    pygame_event_queue = asyncio.Queue()
-    pygame.init()
-    pygame.display.set_caption("RCSnail API manual drive demo")
-
+async def main(context: Context):
     config_manager = ConfigurationManager()
     config = config_manager.config
-    screen = pygame.display.set_mode((config.window_width, config.window_height))
-
     recorder = Recorder(config)
-    interceptor = MultiInterceptor(config, recorder=recorder)
+    transformer = TrainingTransformer()
 
-    car = Car(config, update_override=interceptor.car_update_override)
-    renderer = PygameRenderer(screen, car)
-    interceptor.set_renderer(renderer)
-
-    executor = ThreadPoolExecutor(max_workers=32)
-    pygame_task = loop.run_in_executor(executor, renderer.pygame_event_loop, loop, pygame_event_queue)
-    render_task = asyncio.ensure_future(renderer.render(rcs))
-    event_task = asyncio.ensure_future(renderer.register_pygame_events(pygame_event_queue))
-    queue_task = asyncio.ensure_future(rcs.enqueue(loop, interceptor.intercept_frame, interceptor.intercept_telemetry))
+    data_queue = context.socket(zmq.SUB)
+    controls_queue = context.socket(zmq.PUB)
 
     try:
-        loop.run_forever()
-    except KeyboardInterrupt:
-        print("Closing due to keyboard interrupt.")
+        model = ModelWrapper(config)
+        turbo_count = 0
+        dagger_iteration = 1
+
+        await initialize_synced_sub(context, data_queue, config.data_queue_port)
+        await initialize_synced_pub(context, controls_queue, config.controls_queue_port)
+
+        while True:
+            frame, telemetry = await recv_array_with_json(queue=data_queue)
+            recorder.record(frame, telemetry)
+            turbo_count += 1
+
+            if turbo_count % 500 == 0:
+                print(turbo_count)
+                await fitting_model(model, recorder, transformer)
+                dagger_iteration += 1
+
+            prob = np.random.random()
+            if prob > 0:
+                prediction = model.predict(frame, telemetry)
+            else:
+                prediction = dict(yo="dingles")
+
+            try:
+                controls_queue.send_json(prediction.to_dict())
+            except Exception as ex:
+                print(ex)
     finally:
-        print("Closing shop.")
-        queue_task.cancel()
-        pygame_task.cancel()
-        render_task.cancel()
-        event_task.cancel()
-        pygame.quit()
-        asyncio.ensure_future(rcs.close_client_session())
-        interceptor.close()
+        data_queue.close()
+        controls_queue.close()
+
         if recorder is not None:
             recorder.save_session()
 
-        print("Shop closed.")
+
+async def fitting_model(model, recorder, transformer):
+    logging.info("fitting")
+    try:
+        frames, telemetry, expert_actions = recorder.get_current_data()
+        print(len(frames))
+        # TODO expert actions instead of telemetry as labels
+        train, test = transformer.transform_aggregation_to_inputs(frames, telemetry, telemetry)
+        model.fit(train, test)
+        logging.info("fitting done")
+    except Exception as ex:
+        print(ex)
+
+
+def cancel_tasks(loop):
+    for task in asyncio.Task.all_tasks(loop):
+        task.cancel()
 
 
 if __name__ == "__main__":
-    main()
-    sleep(1)
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
+
+    loop = asyncio.get_event_loop()
+    loop.add_signal_handler(signal.SIGINT, cancel_tasks, loop)
+    loop.add_signal_handler(signal.SIGTERM, cancel_tasks, loop)
+
+    context = zmq.asyncio.Context()
+    try:
+        loop.run_until_complete(main(context))
+    except Exception as ex:
+        logging.error("Interrupted base")
+    finally:
+        loop.close()
+        context.destroy()
