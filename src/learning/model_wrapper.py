@@ -1,10 +1,10 @@
 import os
 import datetime
 import numpy as np
+from commons.car_controls import CarControlDiffs
 
 from learning.models import create_mlp, create_cnn, create_multi_model
 from src.learning.training.car_mapping import CarMapping
-from src.utilities.car_controls import CarControlDiffs
 
 
 class ModelWrapper:
