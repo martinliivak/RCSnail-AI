@@ -8,6 +8,5 @@ recording_height: 40
 recording_width: 60
 recording_fps: 20
 # Procedural flags
-model_override_enabled: true
 recording_enabled: false
-runtime_training_enabled: true
+expert_supervision_enabled: true
