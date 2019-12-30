@@ -27,6 +27,8 @@ class Recorder:
             self.session_frames.append(frame)
             telemetry["now"] = datetime.datetime.now().timestamp()
             self.session_telemetry.append(telemetry)
+            return 1
+        return 0
 
     def record_expert(self, frame, telemetry, expert_actions):
         if telemetry is not None and frame is not None and expert_actions is not None:

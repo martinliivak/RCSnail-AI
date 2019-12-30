@@ -25,7 +25,7 @@ async def main_dagger(context: Context):
 
     try:
         model = ModelWrapper(config)
-        data_count = 0
+        data_count = 1
         dagger_iteration = 0
 
         await initialize_synced_sub(context, data_queue, config.data_queue_port)
@@ -34,13 +34,13 @@ async def main_dagger(context: Context):
         while True:
             frame, data = await recv_array_with_json(queue=data_queue)
             telemetry, expert_actions = data
-            print("expert: ", expert_actions)
-            recorder.record_expert(frame, telemetry, expert_actions)
 
-            data_count += 1
+            if frame is None or telemetry is None or expert_actions is None:
+                continue
 
-            if data_count % 200 == 0:
-                print(data_count)
+            data_count += recorder.record_expert(frame, telemetry, expert_actions)
+
+            if data_count % 500 == 0:
                 await fitting_model(model, recorder, transformer)
                 dagger_iteration += 1
 
