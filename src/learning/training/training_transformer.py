@@ -49,5 +49,5 @@ class TrainingTransformer:
         return self.__collector.collect_numeric_inputs(telemetry_df)
 
     def __create_label_df(self, expert_actions_list):
-        expert_actions_df = pd.DataFrame.from_records(expert_actions_list, columns=CarControlDiffs.__slots__)
+        expert_actions_df = pd.DataFrame.from_records(expert_actions_list, columns=expert_actions_list[0].keys())
         return self.__collector.collect_expert_labels(expert_actions_df)

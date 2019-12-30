@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 import cv2
 import json
 import os
@@ -31,7 +32,7 @@ class Recorder:
         if telemetry is not None and frame is not None and expert_actions is not None:
             self.session_frames.append(frame)
             self.session_telemetry.append(telemetry)
-            self.session_expert_actions.append(expert_actions.to_list())
+            self.session_expert_actions.append(expert_actions)
             return 1
         return 0
 
@@ -57,7 +58,7 @@ class Recorder:
             for i in range(session_length):
                 if self.session_telemetry[i] is not None and self.session_frames[i] is not None:
                     file.write(json.dumps(self.session_telemetry[i]) + "\n")
-                    out.write(self.session_frames[i])
+                    out.write(self.session_frames[i].astype(np.uint8))
 
             out.release()
         logging.info("Telemetry and video saved successfully.")
