@@ -11,10 +11,10 @@ class ModelWrapper:
     def __init__(self, config):
         self.__path_to_models = config.path_to_models
 
-        self.model = self.__create_model()
+        self.model = self.__create_new_model()
         self.__mapping = CarMapping()
 
-    def __create_model(self):
+    def __create_new_model(self):
         mlp = create_mlp(regress=False)
         cnn = create_cnn(regress=False)
         return create_multi_model(mlp, cnn)
@@ -33,6 +33,7 @@ class ModelWrapper:
             train_frames, train_numeric_inputs, train_labels = train_tuple
             test_frames, test_numeric_inputs, test_labels = test_tuple
 
+            #new_model = self.__create_new_model()
             self.model.fit(
                 [train_numeric_inputs, train_frames], train_labels,
                 validation_data=([test_numeric_inputs, test_frames], test_labels),

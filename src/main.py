@@ -1,28 +1,20 @@
-import os
-import datetime
+import traceback
 import asyncio
 import logging
 import signal
 import numpy as np
 import zmq
-from zmq.asyncio import Context, Socket
+from zmq.asyncio import Context
 
-from commons.common_zmq import recv_array_with_json, initialize_synced_sub, initialize_synced_pub
+from commons.common_zmq import recv_array_with_json, initialize_subscriber, initialize_publisher
 from commons.configuration_manager import ConfigurationManager
 
 from learning.model_wrapper import ModelWrapper
 from learning.training.training_transformer import TrainingTransformer
-from src.pipeline.recording.recorder import Recorder
+from utilities.recorder import Recorder
 
 
-def get_training_file_name(path_to_training):
-    date = datetime.datetime.today().strftime("%Y_%m_%d")
-    files_from_same_date = list(filter(lambda file: date in file, os.listdir(path_to_training)))
-
-    return date + "_test_" + str(int(len(files_from_same_date) / 2 + 1))
-
-
-async def main(context: Context):
+async def main_dagger(context: Context):
     config_manager = ConfigurationManager()
     config = config_manager.config
     recorder = Recorder(config)
@@ -33,32 +25,40 @@ async def main(context: Context):
 
     try:
         model = ModelWrapper(config)
-        turbo_count = 0
-        dagger_iteration = 1
+        data_count = 0
+        dagger_iteration = 0
 
-        await initialize_synced_sub(context, data_queue, config.data_queue_port)
-        await initialize_synced_pub(context, controls_queue, config.controls_queue_port)
+        await initialize_subscriber(data_queue, config.data_queue_port)
+        await initialize_publisher(controls_queue, config.controls_queue_port)
 
         while True:
-            frame, telemetry = await recv_array_with_json(queue=data_queue)
-            recorder.record(frame, telemetry)
-            turbo_count += 1
+            frame, data = await recv_array_with_json(queue=data_queue)
+            telemetry, expert_actions = data
 
-            if turbo_count % 500 == 0:
-                print(turbo_count)
+            if frame is None or telemetry is None or expert_actions is None:
+                continue
+
+            data_count += recorder.record_expert(frame, telemetry, expert_actions)
+
+            if data_count % 2000 == 0 and dagger_iteration < 5:
                 await fitting_model(model, recorder, transformer)
+
                 dagger_iteration += 1
-
-            prob = np.random.random()
-            if prob > 0:
-                prediction = model.predict(frame, telemetry)
-            else:
-                prediction = dict(yo="dingles")
-
             try:
-                controls_queue.send_json(prediction.to_dict())
+                expert_probability = np.exp(-0.5 * dagger_iteration)
+                model_probability = np.random.random()
+                if model_probability > expert_probability:
+                    prediction = model.predict(frame, telemetry).to_dict()
+                else:
+                    prediction = expert_actions
+
+                controls_queue.send_json(prediction)
             except Exception as ex:
-                print(ex)
+                print("Predicting exception: {}".format(ex))
+                traceback.print_tb(ex.__traceback__)
+    except Exception as ex:
+        print("Exception: {}".format(ex))
+        traceback.print_tb(ex.__traceback__)
     finally:
         data_queue.close()
         controls_queue.close()
@@ -71,13 +71,12 @@ async def fitting_model(model, recorder, transformer):
     logging.info("fitting")
     try:
         frames, telemetry, expert_actions = recorder.get_current_data()
-        print(len(frames))
-        # TODO expert actions instead of telemetry as labels
-        train, test = transformer.transform_aggregation_to_inputs(frames, telemetry, telemetry)
+        train, test = transformer.transform_aggregation_to_inputs(frames, telemetry, expert_actions)
         model.fit(train, test)
         logging.info("fitting done")
     except Exception as ex:
-        print(ex)
+        print("Fitting exception: {}".format(ex))
+        traceback.print_tb(ex.__traceback__)
 
 
 def cancel_tasks(loop):
@@ -94,9 +93,10 @@ if __name__ == "__main__":
 
     context = zmq.asyncio.Context()
     try:
-        loop.run_until_complete(main(context))
+        loop.run_until_complete(main_dagger(context))
     except Exception as ex:
-        logging.error("Interrupted base")
+        logging.error("Base interruption: {}".format(ex))
+        traceback.print_tb(ex.__traceback__)
     finally:
         loop.close()
         context.destroy()
