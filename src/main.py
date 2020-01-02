@@ -29,8 +29,8 @@ async def main_dagger(context: Context):
         data_count = 1
         dagger_iteration = 0
 
-        initialize_subscriber(data_queue, config.data_queue_port)
-        initialize_publisher(controls_queue, config.controls_queue_port)
+        await initialize_subscriber(data_queue, config.data_queue_port)
+        await initialize_publisher(controls_queue, config.controls_queue_port)
 
         while True:
             frame, data = await recv_array_with_json(queue=data_queue)
