@@ -6,8 +6,7 @@ import numpy as np
 import zmq
 from zmq.asyncio import Context
 
-from commons.common_zmq import recv_array_with_json, initialize_synced_subscriber, initialize_synced_publisher, \
-    initialize_subscriber, initialize_publisher
+from commons.common_zmq import recv_array_with_json, initialize_subscriber, initialize_publisher
 from commons.configuration_manager import ConfigurationManager
 
 from learning.model_wrapper import ModelWrapper
@@ -26,7 +25,7 @@ async def main_dagger(context: Context):
 
     try:
         model = ModelWrapper(config)
-        data_count = 1
+        data_count = 0
         dagger_iteration = 0
 
         await initialize_subscriber(data_queue, config.data_queue_port)
@@ -41,9 +40,7 @@ async def main_dagger(context: Context):
 
             data_count += recorder.record_expert(frame, telemetry, expert_actions)
 
-            if data_count % 500 == 0 and dagger_iteration < 5:
-                # TODO determine if model overwriting is necessary
-                model.clear_model()
+            if data_count % 2000 == 0 and dagger_iteration < 5:
                 await fitting_model(model, recorder, transformer)
 
                 dagger_iteration += 1

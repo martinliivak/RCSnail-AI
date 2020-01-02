@@ -19,9 +19,6 @@ class ModelWrapper:
         cnn = create_cnn(regress=False)
         return create_multi_model(mlp, cnn)
 
-    def clear_model(self):
-        self.model = self.__create_new_model()
-
     def load_model(self, model_filename: str):
         from tensorflow.keras.models import load_model
         self.model = load_model(self.__path_to_models + model_filename + ".h5")
@@ -36,6 +33,7 @@ class ModelWrapper:
             train_frames, train_numeric_inputs, train_labels = train_tuple
             test_frames, test_numeric_inputs, test_labels = test_tuple
 
+            #new_model = self.__create_new_model()
             self.model.fit(
                 [train_numeric_inputs, train_frames], train_labels,
                 validation_data=([test_numeric_inputs, test_frames], test_labels),
