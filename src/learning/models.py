@@ -8,7 +8,7 @@ def create_multi_model(mlp, cnn):
     combined_input = concatenate([mlp.output, cnn.output])
 
     dense_1 = Dense(4, activation="relu")(combined_input)
-    dense_2 = Dense(1, activation="linear")(dense_1)
+    dense_2 = Dense(4, activation="linear")(dense_1)
     model = Model(inputs=[mlp.input, cnn.input], outputs=dense_2)
 
     optimizer = Adam(lr=3e-4)
@@ -17,7 +17,7 @@ def create_multi_model(mlp, cnn):
     return model
 
 
-def create_mlp(input_shape=(1,), regress=False):
+def create_mlp(input_shape=(4,), regress=False):
     from tensorflow.keras.layers import Input
     from tensorflow.keras.layers import Dense
     from tensorflow.keras.models import Model
@@ -27,7 +27,7 @@ def create_mlp(input_shape=(1,), regress=False):
     model = Dense(4, activation="relu")(inputs)
 
     if regress:
-        model = Dense(1, activation="linear")(model)
+        model = Dense(4, activation="linear")(model)
 
     return Model(inputs, model)
 

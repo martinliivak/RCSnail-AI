@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from commons.car_controls import CarControlDiffs
 from sklearn.model_selection import train_test_split
 
 from src.learning.training.label_collector import LabelCollector
@@ -11,9 +10,6 @@ class TrainingTransformer:
         self.__collector = LabelCollector()
 
     def transform_training_from_saved_df(self, telemetry_df):
-        # TODO possibly drop erroneous inputs
-        #df = telemetry.drop(telemetry[telemetry["sa"] < 300].index)
-
         control_labels = self.__collector.collect_numeric_inputs(telemetry_df).diff()
         #gear_labels = self.__collector.collect_gear_labels(telemetry_df).shift(-1)
         #labels = control_labels.join(gear_labels).add_prefix("d_")

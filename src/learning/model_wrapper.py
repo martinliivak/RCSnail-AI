@@ -52,9 +52,29 @@ class ModelWrapper:
 
 def updates_from_prediction(prediction):
     prediction_values = prediction.tolist()[0]
-    # TODO normalize gear to integer values, and remove braking if it's very small
-    #return CarControlDiffs(prediction_values[0], prediction_values[1], prediction_values[2], prediction_values[3])
-    return CarControlDiffs(1, prediction_values[0], 0.0, 0.0)
+    #return CarControlDiffs(1, prediction_values[0], 0.0, 0.0)
+
+    predicted_gear = round_predicted_gear(prediction_values[0])
+    predicted_steering = np.clip(prediction_values[1], -1, 1)
+    predicted_throttle = np.clip(prediction_values[2], 0, 1)
+    predicted_braking = round_predicted_braking(prediction_values[3])
+
+    return CarControlDiffs(predicted_gear, predicted_steering, predicted_throttle, predicted_braking)
+
+
+def round_predicted_gear(predicted_gear):
+    if predicted_gear < 0.3:
+        return 0
+    elif 0.3 <= predicted_gear < 1.6:
+        return 1
+    else:
+        return 2
+
+
+def round_predicted_braking(predicted_braking):
+    if predicted_braking < 0.2:
+        return 0.0
+    return predicted_braking
 
 
 def get_model_file_name(path_to_models: str):
