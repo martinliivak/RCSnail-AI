@@ -1,4 +1,4 @@
-from src.learning.training.car_mapping import CarMapping
+from learning.training.car_mapping import CarMapping
 
 
 class LabelCollector:

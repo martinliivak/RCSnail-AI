@@ -4,7 +4,7 @@ import numpy as np
 from commons.car_controls import CarControlDiffs
 
 from learning.models import create_mlp, create_cnn, create_multi_model
-from src.learning.training.car_mapping import CarMapping
+from learning.training.car_mapping import CarMapping
 
 
 class ModelWrapper:
@@ -33,7 +33,6 @@ class ModelWrapper:
             train_frames, train_numeric_inputs, train_labels = train_tuple
             test_frames, test_numeric_inputs, test_labels = test_tuple
 
-            #new_model = self.__create_new_model()
             self.model.fit(
                 [train_numeric_inputs, train_frames], train_labels,
                 validation_data=([test_numeric_inputs, test_frames], test_labels),
