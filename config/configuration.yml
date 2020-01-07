@@ -10,6 +10,3 @@ recording_fps: 20
 # Procedural flags
 recording_enabled: false
 expert_supervision_enabled: true
-# DAGGER
-dagger_iter_max: 10
-dagger_batch_size: 2000

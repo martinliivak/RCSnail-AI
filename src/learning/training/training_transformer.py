@@ -25,9 +25,9 @@ class TrainingTransformer:
 
     def transform_aggregation_to_inputs(self, frames_list, telemetry_list):
         x_video = np.array(frames_list)
-        x_numeric = self.__create_numeric_input_df(telemetry_list)
+        x_numeric = self.__create_numeric_input_df(telemetry_list).to_numpy()
         # TODO shift labels by one
-        y = self.__create_label_df(self.__collector.collect_labels(telemetry_list))
+        y = self.__create_label_df(self.__collector.collect_labels(telemetry_list)).to_numpy()
 
         video_train, video_test, numeric_train, numeric_test, y_train, y_test = train_test_split(
             x_video, x_numeric, y, test_size=0.2)
@@ -36,8 +36,8 @@ class TrainingTransformer:
 
     def transform_aggregation_to_inputs(self, frames_list, telemetry_list, expert_actions_list):
         x_video = np.array(frames_list)
-        x_numeric = self.__create_numeric_input_df(telemetry_list)
-        y = self.__create_label_df(expert_actions_list)
+        x_numeric = self.__create_numeric_input_df(telemetry_list).to_numpy()
+        y = self.__create_label_df(expert_actions_list).to_numpy()
 
         video_train, video_test, numeric_train, numeric_test, y_train, y_test = train_test_split(
             x_video, x_numeric, y, test_size=0.2)
@@ -49,5 +49,5 @@ class TrainingTransformer:
         return self.__collector.collect_numeric_inputs(telemetry_df)
 
     def __create_label_df(self, expert_actions_list):
-        expert_actions_df = pd.DataFrame.from_records(expert_actions_list, columns=CarControlDiffs.__slots__)
+        expert_actions_df = pd.DataFrame.from_records(expert_actions_list, columns=expert_actions_list[0].keys())
         return self.__collector.collect_expert_labels(expert_actions_df)

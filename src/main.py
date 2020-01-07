@@ -40,14 +40,13 @@ async def main_dagger(context: Context):
 
             data_count += recorder.record_expert(frame, telemetry, expert_actions)
 
-            if data_count % config.dagger_batch_size == 0 and dagger_iteration < config.dagger_iter_max:
+            if data_count % 2000 == 0 and dagger_iteration < 5:
                 await fitting_model(model, recorder, transformer)
 
                 dagger_iteration += 1
             try:
                 expert_probability = np.exp(-0.5 * dagger_iteration)
                 model_probability = np.random.random()
-
                 if model_probability > expert_probability:
                     prediction = model.predict(frame, telemetry).to_dict()
                 else:
