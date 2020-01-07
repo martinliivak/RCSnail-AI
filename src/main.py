@@ -9,9 +9,9 @@ from zmq.asyncio import Context
 from commons.common_zmq import recv_array_with_json, initialize_subscriber, initialize_publisher
 from commons.configuration_manager import ConfigurationManager
 
-from learning.model_wrapper import ModelWrapper
-from learning.training.training_transformer import TrainingTransformer
-from utilities.recorder import Recorder
+from src.learning.model_wrapper import ModelWrapper
+from src.learning.training.training_transformer import TrainingTransformer
+from src.utilities.recorder import Recorder
 
 
 async def main_dagger(context: Context):
