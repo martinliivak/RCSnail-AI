@@ -67,6 +67,6 @@ def create_cnn(input_shape=(40, 60, 3), filters=(16, 32, 64), regress=False):
     model = Activation("relu")(dense_2)
 
     if regress:
-        model = Dense(1, activation="linear")(model)
+        model = Dense(4, activation="linear")(model)
 
     return Model(inputs, model)
