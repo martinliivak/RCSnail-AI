@@ -12,6 +12,7 @@ class ModelWrapper:
         self.__path_to_models = config.path_to_models
 
         self.model = self.__create_new_model()
+        self.model.summary()
         self.__mapping = CarMapping()
 
     def __create_new_model(self):
@@ -33,6 +34,9 @@ class ModelWrapper:
             train_frames, train_numeric_inputs, train_labels = train_tuple
             test_frames, test_numeric_inputs, test_labels = test_tuple
 
+            print("train_num_inp: {}".format(train_numeric_inputs))
+            print("train_labels: {}".format(train_labels))
+
             self.model.fit(
                 [train_numeric_inputs, train_frames], train_labels,
                 validation_data=([test_numeric_inputs, test_frames], test_labels),
@@ -43,7 +47,6 @@ class ModelWrapper:
             print("Training exception: {}".format(ex))
 
     def predict(self, frame, telemetry):
-        print(telemetry)
         steering = float(telemetry[self.__mapping.steering])
         gear = int(telemetry[self.__mapping.gear])
         throttle = float(telemetry[self.__mapping.throttle])
@@ -51,14 +54,15 @@ class ModelWrapper:
 
         # TODO determine order importance, if any exists
         numeric_inputs = np.array([gear, steering, throttle, braking])
-        predictions = self.model.predict([numeric_inputs, frame[np.newaxis, :]])
+
+        predictions = self.model.predict([numeric_inputs[np.newaxis, :], frame[np.newaxis, :]])
         return updates_from_prediction(predictions)
 
 
 def updates_from_prediction(prediction):
     prediction_values = prediction.tolist()[0]
     #return CarControlDiffs(1, prediction_values[0], 0.0, 0.0)
-    print(prediction_values)
+    print("preds: {}".format(prediction_values))
 
     predicted_gear = round_predicted_gear(prediction_values[0])
     predicted_steering = np.clip(prediction_values[1], -1, 1)
@@ -78,7 +82,7 @@ def round_predicted_gear(predicted_gear):
 
 
 def round_predicted_braking(predicted_braking):
-    if predicted_braking < 0.1:
+    if np.abs(predicted_braking) < 0.1:
         return 0.0
     return predicted_braking
 

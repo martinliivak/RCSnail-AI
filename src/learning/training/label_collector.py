@@ -23,7 +23,7 @@ class LabelCollector:
         ]]
 
     def collect_expert_labels(self, telemetry_df):
-        return telemetry_df[[self.__mapping.gear,
+        return telemetry_df[[self.__mapping.d_gear,
                              self.__mapping.d_steering,
                              self.__mapping.d_throttle,
                              self.__mapping.d_braking]]

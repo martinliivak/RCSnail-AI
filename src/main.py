@@ -34,19 +34,23 @@ async def main_dagger(context: Context):
         while True:
             frame, data = await recv_array_with_json(queue=data_queue)
             telemetry, expert_actions = data
+            print("telem: {}".format(telemetry))
+            print("expert: {}".format(expert_actions))
 
             if frame is None or telemetry is None or expert_actions is None:
                 continue
 
             data_count += recorder.record_expert(frame, telemetry, expert_actions)
 
-            if data_count % 2000 == 0 and dagger_iteration < 5:
+            if data_count % 1000 == 0 and dagger_iteration < 5:
                 await fitting_model(model, recorder, transformer)
 
                 dagger_iteration += 1
             try:
                 expert_probability = np.exp(-0.5 * dagger_iteration)
                 model_probability = np.random.random()
+                # todo temp remove
+                # model_probability = 1.0
                 if model_probability > expert_probability:
                     prediction = model.predict(frame, telemetry).to_dict()
                 else:
@@ -72,6 +76,7 @@ async def fitting_model(model, recorder, transformer):
     try:
         frames, telemetry, expert_actions = recorder.get_current_data()
         train, test = transformer.transform_aggregation_to_inputs(frames, telemetry, expert_actions)
+
         model.fit(train, test)
         logging.info("fitting done")
     except Exception as ex:
