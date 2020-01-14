@@ -1,7 +1,7 @@
 import os
 import datetime
 import numpy as np
-from commons.car_controls import CarControlDiffs
+from commons.car_controls import CarControlUpdates
 
 from src.learning.models import create_mlp, create_cnn, create_multi_model
 from src.learning.training.car_mapping import CarMapping
@@ -61,15 +61,15 @@ class ModelWrapper:
 
 def updates_from_prediction(prediction):
     prediction_values = prediction.tolist()[0]
-    #return CarControlDiffs(1, prediction_values[0], 0.0, 0.0)
-    print("preds: {}".format(prediction_values))
+    #print("preds: {}".format(prediction_values))
 
     predicted_gear = round_predicted_gear(prediction_values[0])
-    predicted_steering = np.clip(prediction_values[1], -1, 1)
-    predicted_throttle = np.clip(prediction_values[2], 0, 1)
+    predicted_steering = np.clip(prediction_values[1], -0.1, 0.1)
+    predicted_throttle = np.clip(prediction_values[2], 0, 0.1)
     predicted_braking = round_predicted_braking(prediction_values[3])
 
-    return CarControlDiffs(predicted_gear, predicted_steering, predicted_throttle, predicted_braking)
+    #return CarControlUpdates(1, prediction_values[0], 0.0, 0.0)
+    return CarControlUpdates(predicted_gear, predicted_steering, predicted_throttle, predicted_braking, False)
 
 
 def round_predicted_gear(predicted_gear):
@@ -82,7 +82,7 @@ def round_predicted_gear(predicted_gear):
 
 
 def round_predicted_braking(predicted_braking):
-    if np.abs(predicted_braking) < 0.1:
+    if np.abs(predicted_braking) < 0.01:
         return 0.0
     return predicted_braking
 

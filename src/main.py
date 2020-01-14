@@ -34,8 +34,8 @@ async def main_dagger(context: Context):
         while True:
             frame, data = await recv_array_with_json(queue=data_queue)
             telemetry, expert_actions = data
-            print("telem: {}".format(telemetry))
-            print("expert: {}".format(expert_actions))
+            #print("telem: {}".format(telemetry))
+            #print("expert: {}".format(expert_actions))
 
             if frame is None or telemetry is None or expert_actions is None:
                 continue
@@ -57,6 +57,7 @@ async def main_dagger(context: Context):
                     prediction = expert_actions
 
                 controls_queue.send_json(prediction)
+                recorder.record_post_mortem(telemetry, expert_actions, prediction)
             except Exception as ex:
                 print("Predicting exception: {}".format(ex))
                 traceback.print_tb(ex.__traceback__)
@@ -69,6 +70,7 @@ async def main_dagger(context: Context):
 
         if recorder is not None:
             recorder.save_session()
+            recorder.save_session_with_predictions()
 
 
 async def fitting_model(model, recorder, transformer):
