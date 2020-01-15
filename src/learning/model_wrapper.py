@@ -16,8 +16,8 @@ class ModelWrapper:
         self.__mapping = CarMapping()
 
     def __create_new_model(self):
-        mlp = create_mlp(regress=False)
-        cnn = create_cnn(regress=False)
+        mlp = create_mlp()
+        cnn = create_cnn()
         return create_multi_model(mlp, cnn)
 
     def load_model(self, model_filename: str):
@@ -34,8 +34,8 @@ class ModelWrapper:
             train_frames, train_numeric_inputs, train_labels = train_tuple
             test_frames, test_numeric_inputs, test_labels = test_tuple
 
-            print("train_num_inp: {}".format(train_numeric_inputs))
-            print("train_labels: {}".format(train_labels))
+            #print("train_num_inp: {}".format(train_numeric_inputs))
+            #print("train_labels: {}".format(train_labels))
 
             self.model.fit(
                 [train_numeric_inputs, train_frames], train_labels,

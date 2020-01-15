@@ -42,7 +42,7 @@ async def main_dagger(context: Context):
 
             data_count += recorder.record_expert(frame, telemetry, expert_actions)
 
-            if data_count % 1000 == 0 and dagger_iteration < 5:
+            if data_count % 3000 == 0 and dagger_iteration < 6:
                 await fitting_model(model, recorder, transformer)
 
                 dagger_iteration += 1
