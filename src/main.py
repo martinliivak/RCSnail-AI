@@ -18,7 +18,7 @@ async def main_dagger(context: Context):
     config_manager = ConfigurationManager()
     config = config_manager.config
     recorder = Recorder(config)
-    transformer = TrainingTransformer()
+    transformer = TrainingTransformer(config)
 
     data_queue = context.socket(zmq.SUB)
     controls_queue = context.socket(zmq.PUB)
@@ -34,25 +34,28 @@ async def main_dagger(context: Context):
         while True:
             frame, data = await recv_array_with_json(queue=data_queue)
             telemetry, expert_actions = data
-            #print("telem: {}".format(telemetry))
-            #print("expert: {}".format(expert_actions))
 
             if frame is None or telemetry is None or expert_actions is None:
                 continue
 
             data_count += recorder.record_expert(frame, telemetry, expert_actions)
 
-            if data_count % 3000 == 0 and dagger_iteration < 6:
+            if data_count % config.dagger_epoch_size == 0 and dagger_iteration < config.dagger_epochs_count:
                 await fitting_model(model, recorder, transformer)
 
                 dagger_iteration += 1
             try:
-                expert_probability = np.exp(-0.5 * dagger_iteration)
-                model_probability = np.random.random()
-                # todo temp remove
-                # model_probability = 1.0
-                if model_probability > expert_probability:
+                if config.prediction_mode == 'full_model':
                     prediction = model.predict(frame, telemetry).to_dict()
+                elif config.prediction_mode == 'shared':
+                    # TODO figure out probability schema
+                    expert_probability = np.exp(-0.2 * dagger_iteration)
+                    model_probability = np.random.random()
+
+                    if expert_probability > model_probability:
+                        prediction = expert_actions
+                    else:
+                        prediction = model.predict(frame, telemetry).to_dict()
                 else:
                     prediction = expert_actions
 

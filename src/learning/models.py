@@ -13,9 +13,9 @@ def create_multi_model(mlp, cnn):
     combined_input = concatenate([mlp.output, cnn.output])
 
     dense_1 = Dense(12, activation="relu", kernel_regularizer=l2(0.001))(combined_input)
-    dropout_1 = Dropout(0.5)(dense_1)
+    dropout_1 = Dropout(0.3)(dense_1)
     dense_2 = Dense(8, activation="relu", kernel_regularizer=l2(0.001))(dropout_1)
-    dropout_2 = Dropout(0.5)(dense_2)
+    dropout_2 = Dropout(0.3)(dense_2)
     out_dense = Dense(4, activation="linear")(dropout_2)
 
     model = Model(inputs=[mlp.input, cnn.input], outputs=out_dense)
@@ -36,9 +36,9 @@ def create_mlp(input_shape=(4,), regress=False):
     """More-less copied from https://www.pyimagesearch.com/2019/02/04/keras-multiple-inputs-and-mixed-data/"""
     inputs = Input(shape=input_shape)
     dense_1 = Dense(8, activation="relu", kernel_regularizer=l2(0.001))(inputs)
-    dropout_1 = Dropout(0.5)(dense_1)
+    dropout_1 = Dropout(0.3)(dense_1)
     dense_2 = Dense(6, activation="relu", kernel_regularizer=l2(0.001))(dropout_1)
-    dropout_2 = Dropout(0.5)(dense_2)
+    dropout_2 = Dropout(0.3)(dense_2)
 
     return Model(inputs, dropout_2)
 
