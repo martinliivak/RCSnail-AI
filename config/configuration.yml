@@ -4,9 +4,15 @@ controls_queue_port: 5552
 # Constant properties
 path_to_training: "../../training/"
 path_to_models: "../../training/models/"
-recording_height: 40
-recording_width: 60
+recording_height: 120
+recording_width: 180
 recording_fps: 20
+frame_height: 40
+frame_width: 60
 # Procedural flags
-recording_enabled: false
-expert_supervision_enabled: true
+# modes: full_model, shared, full_expert
+prediction_mode: full_expert
+
+dagger_training_enabled: true
+dagger_epoch_size: 3000
+dagger_epochs_count: 6

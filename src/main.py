@@ -9,16 +9,16 @@ from zmq.asyncio import Context
 from commons.common_zmq import recv_array_with_json, initialize_subscriber, initialize_publisher
 from commons.configuration_manager import ConfigurationManager
 
-from learning.model_wrapper import ModelWrapper
-from learning.training.training_transformer import TrainingTransformer
-from utilities.recorder import Recorder
+from src.learning.model_wrapper import ModelWrapper
+from src.learning.training.training_transformer import TrainingTransformer
+from src.utilities.recorder import Recorder
 
 
 async def main_dagger(context: Context):
     config_manager = ConfigurationManager()
     config = config_manager.config
     recorder = Recorder(config)
-    transformer = TrainingTransformer()
+    transformer = TrainingTransformer(config)
 
     data_queue = context.socket(zmq.SUB)
     controls_queue = context.socket(zmq.PUB)
@@ -40,19 +40,27 @@ async def main_dagger(context: Context):
 
             data_count += recorder.record_expert(frame, telemetry, expert_actions)
 
-            if data_count % 2000 == 0 and dagger_iteration < 5:
+            if config.dagger_training_enabled and data_count % config.dagger_epoch_size == 0 and dagger_iteration < config.dagger_epochs_count:
                 await fitting_model(model, recorder, transformer)
 
                 dagger_iteration += 1
             try:
-                expert_probability = np.exp(-0.5 * dagger_iteration)
-                model_probability = np.random.random()
-                if model_probability > expert_probability:
+                if config.prediction_mode == 'full_model':
                     prediction = model.predict(frame, telemetry).to_dict()
+                elif config.prediction_mode == 'shared':
+                    # TODO figure out probability schema
+                    expert_probability = np.exp(-0.2 * dagger_iteration)
+                    model_probability = np.random.random()
+
+                    if expert_probability > model_probability:
+                        prediction = expert_actions
+                    else:
+                        prediction = model.predict(frame, telemetry).to_dict()
                 else:
                     prediction = expert_actions
 
                 controls_queue.send_json(prediction)
+                recorder.record_post_mortem(telemetry, expert_actions, prediction)
             except Exception as ex:
                 print("Predicting exception: {}".format(ex))
                 traceback.print_tb(ex.__traceback__)
@@ -65,6 +73,7 @@ async def main_dagger(context: Context):
 
         if recorder is not None:
             recorder.save_session()
+            recorder.save_session_with_predictions()
 
 
 async def fitting_model(model, recorder, transformer):
@@ -72,6 +81,7 @@ async def fitting_model(model, recorder, transformer):
     try:
         frames, telemetry, expert_actions = recorder.get_current_data()
         train, test = transformer.transform_aggregation_to_inputs(frames, telemetry, expert_actions)
+
         model.fit(train, test)
         logging.info("fitting done")
     except Exception as ex:

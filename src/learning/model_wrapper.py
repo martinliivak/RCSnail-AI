@@ -1,9 +1,9 @@
 import os
 import datetime
 import numpy as np
-from commons.car_controls import CarControlDiffs
+from commons.car_controls import CarControlUpdates
 
-from learning.models import create_mlp, create_cnn, create_multi_model
+from src.learning.models import create_mlp, create_cnn, create_multi_model
 from src.learning.training.car_mapping import CarMapping
 
 
@@ -12,11 +12,12 @@ class ModelWrapper:
         self.__path_to_models = config.path_to_models
 
         self.model = self.__create_new_model()
+        self.model.summary()
         self.__mapping = CarMapping()
 
     def __create_new_model(self):
-        mlp = create_mlp(regress=False)
-        cnn = create_cnn(regress=False)
+        mlp = create_mlp()
+        cnn = create_cnn()
         return create_multi_model(mlp, cnn)
 
     def load_model(self, model_filename: str):
@@ -33,7 +34,9 @@ class ModelWrapper:
             train_frames, train_numeric_inputs, train_labels = train_tuple
             test_frames, test_numeric_inputs, test_labels = test_tuple
 
-            #new_model = self.__create_new_model()
+            #print("train_num_inp: {}".format(train_numeric_inputs))
+            #print("train_labels: {}".format(train_labels))
+
             self.model.fit(
                 [train_numeric_inputs, train_frames], train_labels,
                 validation_data=([test_numeric_inputs, test_frames], test_labels),
@@ -45,16 +48,43 @@ class ModelWrapper:
 
     def predict(self, frame, telemetry):
         steering = float(telemetry[self.__mapping.steering])
-        numeric_inputs = np.array([steering])
-        predictions = self.model.predict([numeric_inputs, frame[np.newaxis, :]])
+        gear = int(telemetry[self.__mapping.gear])
+        throttle = float(telemetry[self.__mapping.throttle])
+        braking = float(telemetry[self.__mapping.braking])
+
+        # TODO determine order importance, if any exists
+        numeric_inputs = np.array([gear, steering, throttle, braking])
+
+        predictions = self.model.predict([numeric_inputs[np.newaxis, :], frame[np.newaxis, :]])
         return updates_from_prediction(predictions)
 
 
 def updates_from_prediction(prediction):
     prediction_values = prediction.tolist()[0]
-    # TODO normalize gear to integer values, and remove braking if it's very small
-    #return CarControlDiffs(prediction_values[0], prediction_values[1], prediction_values[2], prediction_values[3])
-    return CarControlDiffs(1, prediction_values[0], 0.0, 0.0)
+    #print("preds: {}".format(prediction_values))
+
+    predicted_gear = round_predicted_gear(prediction_values[0])
+    predicted_steering = np.clip(prediction_values[1], -0.1, 0.1)
+    predicted_throttle = np.clip(prediction_values[2], 0, 0.1)
+    predicted_braking = round_predicted_braking(prediction_values[3])
+
+    #return CarControlUpdates(1, prediction_values[0], 0.0, 0.0)
+    return CarControlUpdates(predicted_gear, predicted_steering, predicted_throttle, predicted_braking, False)
+
+
+def round_predicted_gear(predicted_gear):
+    if predicted_gear < 0.3:
+        return 0
+    elif 0.3 <= predicted_gear < 1.6:
+        return 1
+    else:
+        return 2
+
+
+def round_predicted_braking(predicted_braking):
+    if np.abs(predicted_braking) < 0.01:
+        return 0.0
+    return predicted_braking
 
 
 def get_model_file_name(path_to_models: str):
