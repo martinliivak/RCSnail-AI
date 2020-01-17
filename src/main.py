@@ -40,7 +40,7 @@ async def main_dagger(context: Context):
 
             data_count += recorder.record_expert(frame, telemetry, expert_actions)
 
-            if data_count % config.dagger_epoch_size == 0 and dagger_iteration < config.dagger_epochs_count:
+            if config.dagger_training_enabled and data_count % config.dagger_epoch_size == 0 and dagger_iteration < config.dagger_epochs_count:
                 await fitting_model(model, recorder, transformer)
 
                 dagger_iteration += 1
