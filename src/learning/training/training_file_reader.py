@@ -26,8 +26,6 @@ class TrainingFileReader:
                 break
 
         cap.release()
-        # removing the last image due to gear shifting for labels
-        training_images.pop(-1)
         return np.array(training_images)
 
     def read_training_telemetry(self, filename):
@@ -37,3 +35,6 @@ class TrainingFileReader:
                 telemetry_list.append(get_namedtuple_from_json_string(line))
 
         return pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0]._fields)
+
+    def read_telemetry_as_csv(self, filename):
+        return pd.read_csv(self.path_to_training + filename)
