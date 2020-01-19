@@ -13,6 +13,6 @@ frame_width: 60
 # modes: full_model, shared, full_expert
 prediction_mode: full_expert
 
-dagger_training_enabled: true
+dagger_training_enabled: false
 dagger_epoch_size: 3000
 dagger_epochs_count: 6
