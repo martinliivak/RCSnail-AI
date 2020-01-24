@@ -75,7 +75,7 @@ class Recorder:
         df_expert.columns = [str(col) + '_expert' for col in df_expert.columns]
 
         df = pd.concat([df_telem, df_expert], axis=1)
-        df.to_csv(self.training_session + '_with_expert.csv')
+        df.to_csv(self.training_session + '.csv')
 
         logging.info("Telemetry, expert, and video saved successfully.")
 
