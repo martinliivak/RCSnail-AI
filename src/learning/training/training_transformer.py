@@ -19,7 +19,7 @@ class TrainingTransformer:
         return training_df.drop(training_df.tail(1).index)
 
     def transform_aggregation_to_inputs(self, frames_list, telemetry_list, expert_actions_list):
-        x_video = self.__resize_video_for_training(frames_list)
+        x_video = self.resize_video_for_training(frames_list)
         x_numeric = self.__create_numeric_input_df(telemetry_list).to_numpy()
         y = self.__create_label_df(expert_actions_list).to_numpy()
 
@@ -36,7 +36,7 @@ class TrainingTransformer:
         expert_actions_df = pd.DataFrame.from_records(expert_actions_list, columns=expert_actions_list[0].keys())
         return self.__collector.collect_expert_labels(expert_actions_df)
 
-    def __resize_video_for_training(self, frames_list):
+    def resize_video_for_training(self, frames_list):
         resized_frames = []
         for frame in frames_list:
             resized_frames.append(cv2.resize(frame, dsize=self.resolution, interpolation=cv2.INTER_CUBIC))

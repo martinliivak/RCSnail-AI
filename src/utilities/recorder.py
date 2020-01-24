@@ -3,7 +3,6 @@ import logging
 import numpy as np
 import pandas as pd
 import cv2
-import json
 import os
 import datetime
 
@@ -72,8 +71,6 @@ class Recorder:
 
         df_telem = pd.DataFrame(self.session_telemetry)
         df_expert = pd.DataFrame(self.session_expert_actions)
-        df_expert.columns = [str(col) + '_expert' for col in df_expert.columns]
-
         df = pd.concat([df_telem, df_expert], axis=1)
         df.to_csv(self.training_session + '.csv')
 

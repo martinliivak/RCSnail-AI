@@ -31,15 +31,15 @@ class ModelWrapper:
 
     def fit(self, train_tuple, test_tuple, epochs=1, batch_size=20, verbose=1):
         try:
-            train_frames, train_numeric_inputs, train_labels = train_tuple
-            test_frames, test_numeric_inputs, test_labels = test_tuple
+            frames_train, numeric_train, diffs_train = train_tuple
+            frames_test, numeric_test, diffs_test = test_tuple
 
             #print("train_num_inp: {}".format(train_numeric_inputs))
             #print("train_labels: {}".format(train_labels))
 
             self.model.fit(
-                [train_numeric_inputs, train_frames], train_labels,
-                validation_data=([test_numeric_inputs, test_frames], test_labels),
+                [numeric_train, frames_train], diffs_train,
+                validation_data=([numeric_test, frames_test], diffs_test),
                 epochs=epochs,
                 batch_size=batch_size,
                 verbose=verbose)
