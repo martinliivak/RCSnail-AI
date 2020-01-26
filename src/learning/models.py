@@ -26,7 +26,7 @@ def create_multi_model(mlp, cnn):
     return model
 
 
-def create_mlp(input_shape=(4,), regress=False):
+def create_mlp(input_shape=(4,)):
     from tensorflow.keras.layers import Input
     from tensorflow.keras.layers import Dense
     from tensorflow.keras.layers import Dropout
@@ -59,25 +59,25 @@ def create_cnn(input_shape=(40, 60, 3), filters=(16, 32, 64), regress=False):
     batch_norm_axis = -1
     inputs = Input(shape=input_shape)
 
-    x = inputs
+    layer_x = inputs
     for (layer, conv_filter) in enumerate(filters):
-        conv_2d = Conv2D(conv_filter, (3, 3), padding="same")(x)
+        conv_2d = Conv2D(conv_filter, (3, 3), padding="same")(layer_x)
         relu = Activation("relu")(conv_2d)
         batch_norm = BatchNormalization(axis=batch_norm_axis)(relu)
-        x = MaxPooling2D(pool_size=(2, 2))(batch_norm)
+        layer_x = MaxPooling2D(pool_size=(2, 2))(batch_norm)
 
-    flatten = Flatten()(x)
-    dense = Dense(16)(flatten)
-    relu_2 = Activation("relu")(dense)
+    flatten = Flatten()(layer_x)
+    dense_1 = Dense(16)(flatten)
+    dropout_1 = Dropout(0.3)(dense_1)
+    relu_2 = Activation("relu")(dropout_1)
     batch_norm_2 = BatchNormalization(axis=batch_norm_axis)(relu_2)
-    dropout = Dropout(0.5)(batch_norm_2)
+    dropout_2 = Dropout(0.3)(batch_norm_2)
 
-    # apply another FC layer, this one to match the number of nodes
-    # coming out of the MLP
-    dense_2 = Dense(8)(dropout)
+    # apply another FC layer, this one to match the number of nodes coming out of the MLP
+    dense_2 = Dense(6)(dropout_2)
     model = Activation("relu")(dense_2)
 
     if regress:
-        model = Dense(8, activation="linear")(model)
+        model = Dense(6, activation="linear")(model)
 
     return Model(inputs, model)
