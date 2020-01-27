@@ -21,7 +21,8 @@ def create_multi_model(mlp, cnn):
     model = Model(inputs=[mlp.input, cnn.input], outputs=out_dense)
     optimizer = Adam(lr=3e-4)
 
-    model.compile(loss="mean_squared_error", optimizer=optimizer)
+    # MAE usage from https://arxiv.org/abs/1809.04843
+    model.compile(loss="mean_absolute_error", optimizer=optimizer)
 
     return model
 
