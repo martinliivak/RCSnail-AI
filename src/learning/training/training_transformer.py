@@ -47,10 +47,7 @@ class TrainingTransformer:
         resized_frames = np.zeros((len(frames_list), self.resolution[1], self.resolution[0], 3), dtype=np.float32)
         for i in range(0, len(frames_list)):
             resized_frames[i] = cv2.resize(frames_list[i], dsize=self.resolution, interpolation=cv2.INTER_CUBIC).astype(np.float32)
-            resized_frames[i] = resized_frames[i] / 255
-        return resized_frames
+        return resized_frames / 255
 
     def normalize_video_for_training(self, frames_np):
-        for i in range(0, frames_np.shape[0]):
-            frames_np[i] = frames_np[i] / 255
-        return frames_np
+        return frames_np / 255
