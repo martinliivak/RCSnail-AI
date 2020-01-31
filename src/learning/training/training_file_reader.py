@@ -29,13 +29,8 @@ class TrainingFileReader:
         cap.release()
         return np.array(frames)
 
-    def read_training_telemetry(self, filename):
-        telemetry_list = []
-        with open(self.path_to_training + filename) as file:
-            for line in file:
-                telemetry_list.append(get_namedtuple_from_json_string(line))
-
-        return pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0]._fields)
-
     def read_telemetry_as_csv(self, filename):
         return pd.read_csv(self.path_to_training + filename)
+
+    def read_specific_telemetry_columns(self, filename, columns):
+        return pd.read_csv(self.path_to_training + filename, usecols=columns)

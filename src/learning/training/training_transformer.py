@@ -21,7 +21,7 @@ class TrainingTransformer:
         return training_df.drop(training_df.tail(1).index)
 
     def transform_aggregation_to_inputs(self, frames_list, telemetry_list, expert_actions_list):
-        x_video = self.resize_video_for_training(frames_list)
+        x_video = self.resize_and_normalize_video(frames_list)
         x_numeric = self.__create_numeric_input_df(telemetry_list).to_numpy()
         y = self.__create_label_df(expert_actions_list).to_numpy()
 
@@ -40,12 +40,17 @@ class TrainingTransformer:
 
     def resize_frame_for_training(self, frame):
         resized = cv2.resize(frame, dsize=self.resolution, interpolation=cv2.INTER_CUBIC)
-        return resized / 255
+        return resized
 
-    def resize_video_for_training(self, frames_list):
-        resized_frames = []
-        for frame in frames_list:
-            resized = cv2.resize(frame, dsize=self.resolution, interpolation=cv2.INTER_CUBIC)
-            resized = cv2.normalize(resized, resized, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-            resized_frames.append(resized)
-        return np.array(resized_frames)
+    # TODO figure out if this works + dtypes
+    def resize_and_normalize_video(self, frames_list):
+        resized_frames = np.zeros((len(frames_list), self.resolution[1], self.resolution[0], 3), dtype=np.float32)
+        for i in range(0, len(frames_list)):
+            resized_frames[i] = cv2.resize(frames_list[i], dsize=self.resolution, interpolation=cv2.INTER_CUBIC).astype(np.float32)
+            resized_frames[i] = resized_frames[i] / 255
+        return resized_frames
+
+    def normalize_video_for_training(self, frames_np):
+        for i in range(0, frames_np.shape[0]):
+            frames_np[i] = frames_np[i] / 255
+        return frames_np
