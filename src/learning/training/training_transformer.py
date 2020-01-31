@@ -1,3 +1,5 @@
+import gc
+
 import numpy as np
 import pandas as pd
 import cv2
@@ -36,8 +38,14 @@ class TrainingTransformer:
         expert_actions_df = pd.DataFrame.from_records(expert_actions_list, columns=expert_actions_list[0].keys())
         return self.__collector.collect_expert_labels(expert_actions_df)
 
+    def resize_frame_for_training(self, frame):
+        resized = cv2.resize(frame, dsize=self.resolution, interpolation=cv2.INTER_CUBIC)
+        return resized / 255
+
     def resize_video_for_training(self, frames_list):
         resized_frames = []
         for frame in frames_list:
-            resized_frames.append(cv2.resize(frame, dsize=self.resolution, interpolation=cv2.INTER_CUBIC))
+            resized = cv2.resize(frame, dsize=self.resolution, interpolation=cv2.INTER_CUBIC)
+            resized = cv2.normalize(resized, resized, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+            resized_frames.append(resized)
         return np.array(resized_frames)
