@@ -55,7 +55,7 @@ class ModelWrapper:
         # TODO determine order importance, if any exists
         numeric_inputs = np.array([gear, steering, throttle, braking])
 
-        predictions = self.model.predict([numeric_inputs[np.newaxis, :], frame[np.newaxis, :]])
+        predictions = self.model.predict([frame[np.newaxis, :], numeric_inputs[np.newaxis, :]])
         return updates_from_prediction(predictions)
 
 
