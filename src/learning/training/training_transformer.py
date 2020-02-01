@@ -42,7 +42,6 @@ class TrainingTransformer:
         resized = cv2.resize(frame, dsize=self.resolution, interpolation=cv2.INTER_CUBIC)
         return resized
 
-    # TODO figure out if this works + dtypes
     def resize_and_normalize_video(self, frames_list):
         resized_frames = np.zeros((len(frames_list), self.resolution[1], self.resolution[0], 3), dtype=np.float32)
         for i in range(0, len(frames_list)):
