@@ -26,3 +26,14 @@ class LabelCollector:
             self.__mapping.d_throttle,
             self.__mapping.d_braking
         ]
+
+    def steering_columns(self):
+        return [
+            self.__mapping.steering,
+            self.__mapping.throttle
+        ]
+
+    def diff_steering_columns(self):
+        return [
+            self.__mapping.d_steering
+        ]
