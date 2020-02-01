@@ -6,8 +6,8 @@ from sklearn.model_selection import train_test_split
 
 class Generator:
 
-    def __init__(self, base_path='../../training/laps/', mem_length=1, mem_interval=1, batch_size=32, shuffle=False):
-        self.path = '{}/n{}_m{}/'.format(base_path, mem_length, mem_interval)
+    def __init__(self, base_path='../../training/', mem_length=1, mem_interval=1, batch_size=32, shuffle=False):
+        self.path = '{}n{}_m{}/'.format(base_path, mem_length, mem_interval)
         self.mem_length = mem_length
         self.mem_interval = mem_interval
         self.batch_size = batch_size
@@ -21,18 +21,22 @@ class Generator:
         indexes = list(range(0, data_count))
         self.train_indexes, self.test_indexes = train_test_split(indexes)
 
-    def generate(self, indexes):
-        while True:
-            if self.shuffle:
-                random.shuffle(indexes)
+    def generate(self, data='train'):
+        if data == 'train':
+            indexes = self.train_indexes
+        else:
+            indexes = self.test_indexes
 
-            batch_count = len(indexes) // self.batch_size
+        if self.shuffle:
+            random.shuffle(indexes)
 
-            for i in range(batch_count):
-                batch_indexes = indexes[i * self.batch_size:(i + 1) * self.batch_size]
-                x_frame, x_numeric, y = self.__load_batch(batch_indexes)
+        batch_count = len(indexes) // self.batch_size
 
-                yield (x_frame, x_numeric), y
+        for i in range(batch_count):
+            batch_indexes = indexes[i * self.batch_size:(i + 1) * self.batch_size]
+            x_frame, x_numeric, y = self.__load_batch(batch_indexes)
+
+            yield (x_frame, x_numeric), y
 
     def __load_batch(self, batch_indexes):
         frames = []

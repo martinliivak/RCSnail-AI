@@ -29,7 +29,7 @@ class ModelWrapper:
         self.model.save(self.__path_to_models + model_filename + ".h5")
         print("Model has been saved to {} as {}.h5".format(self.__path_to_models, model_filename))
 
-    def fit(self, train_tuple, test_tuple, epochs=1, batch_size=20, verbose=1):
+    def fit(self, train_tuple, test_tuple, epochs=1, batch_size=32, verbose=1):
         try:
             frames_train, numeric_train, diffs_train = train_tuple
             frames_test, numeric_test, diffs_test = test_tuple
@@ -38,8 +38,8 @@ class ModelWrapper:
             #print("train_labels: {}".format(train_labels))
 
             self.model.fit(
-                [numeric_train, frames_train], diffs_train,
-                validation_data=([numeric_test, frames_test], diffs_test),
+                [frames_train, numeric_train], diffs_train,
+                validation_data=([frames_test, numeric_test], diffs_test),
                 epochs=epochs,
                 batch_size=batch_size,
                 verbose=verbose)

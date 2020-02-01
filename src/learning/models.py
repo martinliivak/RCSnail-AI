@@ -10,7 +10,7 @@ def create_multi_model(mlp, cnn):
     from tensorflow.keras.models import Model
     from tensorflow.keras.optimizers import Adam
 
-    combined_input = concatenate([mlp.output, cnn.output])
+    combined_input = concatenate([cnn.output, mlp.output])
 
     dense_1 = Dense(12, activation="relu", kernel_regularizer=l2(0.001))(combined_input)
     dropout_1 = Dropout(0.3)(dense_1)
