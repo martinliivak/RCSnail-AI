@@ -39,9 +39,8 @@ def create_mlp(input_shape=(4,)):
     dense_1 = Dense(8, activation="tanh", kernel_regularizer=l2(0.001))(inputs)
     dropout_1 = Dropout(0.3)(dense_1)
     dense_2 = Dense(6, activation="tanh", kernel_regularizer=l2(0.001))(dropout_1)
-    dropout_2 = Dropout(0.3)(dense_2)
 
-    return Model(inputs, dropout_2)
+    return Model(inputs, dense_2)
 
 
 def create_cnn(input_shape=(40, 60, 3), filters=(16, 32, 64), regress=False):
@@ -49,11 +48,10 @@ def create_cnn(input_shape=(40, 60, 3), filters=(16, 32, 64), regress=False):
     from tensorflow.keras.layers import Conv2D
     from tensorflow.keras.layers import MaxPooling2D
     from tensorflow.keras.layers import Dense
-    from tensorflow.keras.layers import Dropout
     from tensorflow.keras.layers import Flatten
     from tensorflow.keras.layers import Input
     from tensorflow.keras.models import Model
-
+    from tensorflow.keras.regularizers import l2
 
     """More-less copied from https://www.pyimagesearch.com/2019/02/04/keras-multiple-inputs-and-mixed-data/"""
     batch_norm_axis = -1
@@ -66,13 +64,7 @@ def create_cnn(input_shape=(40, 60, 3), filters=(16, 32, 64), regress=False):
         layer_x = MaxPooling2D(pool_size=(2, 2))(batch_norm)
 
     flatten = Flatten()(layer_x)
-    dense_1 = Dense(16, activation="tanh")(flatten)
-    dropout_1 = Dropout(0.3)(dense_1)
-    batch_norm_2 = BatchNormalization(axis=batch_norm_axis)(dropout_1)
-    dropout_2 = Dropout(0.3)(batch_norm_2)
-
-    # apply another FC layer, this one to match the number of nodes coming out of the MLP
-    model = Dense(6, activation="tanh")(dropout_2)
+    model = Dense(6, activation="tanh", kernel_regularizer=l2(0.001))(flatten)
 
     if regress:
         model = Dense(6, activation="linear")(model)
