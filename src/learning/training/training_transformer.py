@@ -11,10 +11,10 @@ from src.learning.training.label_collector import LabelCollector
 class TrainingTransformer:
     def __init__(self, config):
         self.resolution = (config.frame_width, config.frame_height)
-        self.__collector = LabelCollector()
+        self.__labels = LabelCollector()
 
     def transform_training_from_saved_df(self, telemetry_df):
-        control_labels = self.__collector.collect_numeric_inputs(telemetry_df).diff()
+        control_labels = self.__labels.collect_columns(telemetry_df).diff()
         diff_labels = control_labels.add_prefix("d_")
         training_df = telemetry_df.join(diff_labels)
 
@@ -32,11 +32,11 @@ class TrainingTransformer:
 
     def __create_numeric_input_df(self, telemetry_list):
         telemetry_df = pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0].keys())
-        return self.__collector.collect_numeric_inputs(telemetry_df)
+        return self.__labels.collect_columns(telemetry_df, self.__labels.steering_columns())
 
     def __create_label_df(self, expert_actions_list):
         expert_actions_df = pd.DataFrame.from_records(expert_actions_list, columns=expert_actions_list[0].keys())
-        return self.__collector.collect_expert_labels(expert_actions_df)
+        return self.__labels.collect_columns(expert_actions_df, self.__labels.diff_steering_columns())
 
     def resize_frame_for_training(self, frame):
         resized = cv2.resize(frame, dsize=self.resolution, interpolation=cv2.INTER_CUBIC)

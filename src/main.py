@@ -55,8 +55,10 @@ async def main_dagger(context: Context):
                         prediction = expert_actions
                     else:
                         prediction = model.predict(frame, telemetry).to_dict()
-                else:
+                elif config.prediction_mode == 'full_expert':
                     prediction = expert_actions
+                else:
+                    raise ValueError
 
                 controls_queue.send_json(prediction)
                 #recorder.record_post_mortem(telemetry, expert_actions, prediction)

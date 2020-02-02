@@ -5,11 +5,8 @@ class LabelCollector:
     def __init__(self):
         self.__mapping = CarMapping()
 
-    def collect_numeric_inputs(self, telemetry_df):
-        return telemetry_df[self.numeric_columns()]
-
-    def collect_expert_labels(self, telemetry_df):
-        return telemetry_df[self.diff_columns()]
+    def collect_columns(self, telemetry_df, column_list):
+        return telemetry_df[column_list]
 
     def numeric_columns(self):
         return [
