@@ -3,7 +3,6 @@ import logging
 import numpy as np
 import pandas as pd
 import cv2
-import json
 import os
 import datetime
 
@@ -51,9 +50,9 @@ class Recorder:
     def get_current_data(self):
         return self.session_frames, self.session_telemetry, self.session_expert_actions
 
-    def save_session(self):
+    def save_session_with_expert(self):
         session_length = len(self.session_telemetry)
-        assert session_length == len(self.session_frames), "Video and telemetry sizes are not identical"
+        assert session_length == len(self.session_frames) == len(self.session_expert_actions), "Stored actions are not of same length."
 
         if session_length <= 0:
             logging.info("Nothing to record, closing.")
@@ -61,19 +60,21 @@ class Recorder:
 
         logging.info("Number of training instances to be saved: " + str(session_length))
 
-        with open(self.training_session + '.csv', 'w') as file:
-            out = cv2.VideoWriter(self.training_session + ".avi",
-                                  cv2.VideoWriter_fourcc(*'DIVX'),
-                                  self.fps,
-                                  self.resolution)
+        out = cv2.VideoWriter(self.training_session + ".avi",
+                              cv2.VideoWriter_fourcc(*'DIVX'),
+                              self.fps,
+                              self.resolution)
 
-            for i in range(session_length):
-                if self.session_telemetry[i] is not None and self.session_frames[i] is not None:
-                    file.write(json.dumps(self.session_telemetry[i]) + "\n")
-                    out.write(self.session_frames[i].astype(np.uint8))
+        for i in range(session_length):
+            out.write(self.session_frames[i].astype(np.uint8))
+        out.release()
 
-            out.release()
-        logging.info("Telemetry and video saved successfully.")
+        df_telem = pd.DataFrame(self.session_telemetry)
+        df_expert = pd.DataFrame(self.session_expert_actions)
+        df = pd.concat([df_telem, df_expert], axis=1)
+        df.to_csv(self.training_session + '.csv')
+
+        logging.info("Telemetry, expert, and video saved successfully.")
 
     def save_session_with_predictions(self):
         session_length = len(self.post_telemetry)

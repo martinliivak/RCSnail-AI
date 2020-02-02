@@ -8,10 +8,14 @@ from src.learning.training.car_mapping import CarMapping
 
 
 class ModelWrapper:
-    def __init__(self, config):
+    def __init__(self, config, model_file=None):
         self.__path_to_models = config.path_to_models
 
-        self.model = self.__create_new_model()
+        if model_file is not None:
+            self.model = self.__load_model(model_file)
+        else:
+            self.model = self.__create_new_model()
+
         self.model.summary()
         self.__mapping = CarMapping()
 
@@ -20,26 +24,25 @@ class ModelWrapper:
         cnn = create_cnn()
         return create_multi_model(mlp, cnn)
 
-    def load_model(self, model_filename: str):
+    def __load_model(self, model_filename: str):
         from tensorflow.keras.models import load_model
-        self.model = load_model(self.__path_to_models + model_filename + ".h5")
-        print("Loaded " + model_filename)
+        return load_model(self.__path_to_models + model_filename + ".h5")
 
     def save_model(self, model_filename: str):
         self.model.save(self.__path_to_models + model_filename + ".h5")
         print("Model has been saved to {} as {}.h5".format(self.__path_to_models, model_filename))
 
-    def fit(self, train_tuple, test_tuple, epochs=1, batch_size=20, verbose=1):
+    def fit(self, train_tuple, test_tuple, epochs=1, batch_size=32, verbose=1):
         try:
-            train_frames, train_numeric_inputs, train_labels = train_tuple
-            test_frames, test_numeric_inputs, test_labels = test_tuple
+            frames_train, numeric_train, diffs_train = train_tuple
+            frames_test, numeric_test, diffs_test = test_tuple
 
-            #print("train_num_inp: {}".format(train_numeric_inputs))
-            #print("train_labels: {}".format(train_labels))
+            # print("train_num_inp: {}".format(train_numeric_inputs))
+            # print("train_labels: {}".format(train_labels))
 
             self.model.fit(
-                [train_numeric_inputs, train_frames], train_labels,
-                validation_data=([test_numeric_inputs, test_frames], test_labels),
+                [frames_train, numeric_train], diffs_train,
+                validation_data=([frames_test, numeric_test], diffs_test),
                 epochs=epochs,
                 batch_size=batch_size,
                 verbose=verbose)
@@ -47,29 +50,28 @@ class ModelWrapper:
             print("Training exception: {}".format(ex))
 
     def predict(self, frame, telemetry):
+        # gear = int(telemetry[self.__mapping.gear])
+        # braking = float(telemetry[self.__mapping.braking])
         steering = float(telemetry[self.__mapping.steering])
-        gear = int(telemetry[self.__mapping.gear])
         throttle = float(telemetry[self.__mapping.throttle])
-        braking = float(telemetry[self.__mapping.braking])
 
-        # TODO determine order importance, if any exists
-        numeric_inputs = np.array([gear, steering, throttle, braking])
+        numeric_inputs = np.array([steering, throttle])
 
-        predictions = self.model.predict([numeric_inputs[np.newaxis, :], frame[np.newaxis, :]])
+        predictions = self.model.predict([frame[np.newaxis, :], numeric_inputs[np.newaxis, :]])
         return updates_from_prediction(predictions)
 
 
 def updates_from_prediction(prediction):
     prediction_values = prediction.tolist()[0]
-    #print("preds: {}".format(prediction_values))
+    # print("preds: {}".format(prediction_values))
 
-    predicted_gear = round_predicted_gear(prediction_values[0])
-    predicted_steering = np.clip(prediction_values[1], -0.1, 0.1)
-    predicted_throttle = np.clip(prediction_values[2], 0, 0.1)
-    predicted_braking = round_predicted_braking(prediction_values[3])
+    # predicted_gear = round_predicted_gear(prediction_values[0])
+    # predicted_steering = np.clip(prediction_values[1], -0.1, 0.1)
+    # predicted_throttle = np.clip(prediction_values[2], 0, 0.1)
+    # predicted_braking = round_predicted_braking(prediction_values[3])
 
-    #return CarControlUpdates(1, prediction_values[0], 0.0, 0.0)
-    return CarControlUpdates(predicted_gear, predicted_steering, predicted_throttle, predicted_braking, False)
+    # return CarControlUpdates(predicted_gear, predicted_steering, predicted_throttle, predicted_braking)
+    return CarControlUpdates(1, prediction_values[0], 0.0, 0.0)
 
 
 def round_predicted_gear(predicted_gear):

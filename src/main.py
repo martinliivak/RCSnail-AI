@@ -42,25 +42,26 @@ async def main_dagger(context: Context):
 
             if config.dagger_training_enabled and data_count % config.dagger_epoch_size == 0 and dagger_iteration < config.dagger_epochs_count:
                 await fitting_model(model, recorder, transformer)
-
                 dagger_iteration += 1
+
             try:
                 if config.prediction_mode == 'full_model':
                     prediction = model.predict(frame, telemetry).to_dict()
                 elif config.prediction_mode == 'shared':
-                    # TODO figure out probability schema
-                    expert_probability = np.exp(-0.2 * dagger_iteration)
+                    expert_probability = np.exp(-0.15 * dagger_iteration)
                     model_probability = np.random.random()
 
                     if expert_probability > model_probability:
                         prediction = expert_actions
                     else:
                         prediction = model.predict(frame, telemetry).to_dict()
-                else:
+                elif config.prediction_mode == 'full_expert':
                     prediction = expert_actions
+                else:
+                    raise ValueError
 
                 controls_queue.send_json(prediction)
-                recorder.record_post_mortem(telemetry, expert_actions, prediction)
+                #recorder.record_post_mortem(telemetry, expert_actions, prediction)
             except Exception as ex:
                 print("Predicting exception: {}".format(ex))
                 traceback.print_tb(ex.__traceback__)
@@ -72,8 +73,7 @@ async def main_dagger(context: Context):
         controls_queue.close()
 
         if recorder is not None:
-            recorder.save_session()
-            recorder.save_session_with_predictions()
+            recorder.save_session_with_expert()
 
 
 async def fitting_model(model, recorder, transformer):

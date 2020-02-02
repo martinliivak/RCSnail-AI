@@ -13,27 +13,24 @@ class TrainingFileReader:
     def __init__(self, path_to_training="../training/"):
         self.path_to_training = path_to_training
 
-    def read_training_video(self, filename):
+    def read_video(self, filename):
         cap = cv2.VideoCapture(self.path_to_training + filename)
-        training_images = []
+        frames = []
 
         while True:
             result, frame = cap.read()
-            if result:
-                training_images.append(frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q') or not result:
                 break
 
+            frame = cv2.flip(frame, 1)
+            frames.append(frame)
+
         cap.release()
-        # removing the last image due to gear shifting for labels
-        training_images.pop(-1)
-        return np.array(training_images)
+        return np.array(frames)
 
-    def read_training_telemetry(self, filename):
-        telemetry_list = []
-        with open(self.path_to_training + filename) as file:
-            for line in file:
-                telemetry_list.append(get_namedtuple_from_json_string(line))
+    def read_telemetry_as_csv(self, filename):
+        return pd.read_csv(self.path_to_training + filename)
 
-        return pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0]._fields)
+    def read_specific_telemetry_columns(self, filename, columns):
+        return pd.read_csv(self.path_to_training + filename, usecols=columns)
