@@ -12,6 +12,7 @@ from commons.common_zmq import recv_array_with_json, initialize_subscriber, init
 from commons.configuration_manager import ConfigurationManager
 
 from src.learning.model_wrapper import ModelWrapper
+from src.learning.training.generator import Generator
 from src.learning.training.training_transformer import TrainingTransformer
 from src.utilities.recorder import Recorder
 
@@ -21,6 +22,7 @@ async def main_dagger(context: Context):
     config = config_manager.config
     transformer = TrainingTransformer(config)
     recorder = Recorder(config, transformer)
+    generator = Generator(base_path=config.path_to_session_files, memory=(1, 1), batch_size=64)
 
     data_queue = context.socket(zmq.SUB)
     controls_queue = context.socket(zmq.PUB)
@@ -86,17 +88,26 @@ async def main_dagger(context: Context):
 
 
 async def fitting_model(model, recorder, transformer):
-    logging.info("fitting")
+    logging.info("Fitting")
     try:
         frames, telemetry, expert_actions = recorder.get_current_data()
         train, test = transformer.transform_aggregation_to_inputs(frames, telemetry, expert_actions)
 
         model.fit(train, test)
-        logging.info("fitting done")
+        logging.info("Fitting done")
     except Exception as ex:
         print("Fitting exception: {}".format(ex))
         traceback.print_tb(ex.__traceback__)
 
+
+async def fitting_model_with_generator(model, generator):
+    logging.info("Fitting with generator")
+    try:
+        model.fit(generator)
+        logging.info("Fitting done")
+    except Exception as ex:
+        print("Fitting exception: {}".format(ex))
+        traceback.print_tb(ex.__traceback__)
 
 def cancel_tasks(loop):
     for task in asyncio.Task.all_tasks(loop):

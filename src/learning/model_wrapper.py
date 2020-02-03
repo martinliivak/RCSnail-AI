@@ -37,9 +37,6 @@ class ModelWrapper:
             frames_train, numeric_train, diffs_train = train_tuple
             frames_test, numeric_test, diffs_test = test_tuple
 
-            # print("train_num_inp: {}".format(train_numeric_inputs))
-            # print("train_labels: {}".format(train_labels))
-
             self.model.fit(
                 [frames_train, numeric_train], diffs_train,
                 validation_data=([frames_test, numeric_test], diffs_test),
@@ -48,6 +45,16 @@ class ModelWrapper:
                 verbose=verbose)
         except Exception as ex:
             print("Training exception: {}".format(ex))
+
+    def fit(self, generator, epochs=1, verbose=1):
+        try:
+            self.model.fit(generator.generate(data='train'),
+                           steps_per_epoch=generator.train_batch_count,
+                           validation_data=generator.generate(data='test'),
+                           validation_steps=generator.test_batch_count,
+                           epochs=epochs, verbose=verbose)
+        except Exception as ex:
+            print("Generator training exception: {}".format(ex))
 
     def predict(self, frame, telemetry):
         # gear = int(telemetry[self.__mapping.gear])
