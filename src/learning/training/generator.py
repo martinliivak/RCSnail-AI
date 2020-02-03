@@ -12,7 +12,7 @@ class GenFiles:
 class Generator:
     def __init__(self, base_path='../../training/', memory=(1, 1), batch_size=32, shuffle=True):
         self.memory_string = 'n{}_m{}'.format(*memory)
-        self.path = base_path + self.memory_string + '/'
+        self.path = base_path
 
         self.batch_size = batch_size
         self.shuffle = shuffle

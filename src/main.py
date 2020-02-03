@@ -22,7 +22,6 @@ async def main_dagger(context: Context):
     config = config_manager.config
     transformer = TrainingTransformer(config)
     recorder = Recorder(config, transformer)
-    generator = Generator(base_path=config.path_to_session_files, memory=(1, 1), batch_size=64)
 
     data_queue = context.socket(zmq.SUB)
     controls_queue = context.socket(zmq.PUB)
@@ -100,9 +99,11 @@ async def fitting_model(model, recorder, transformer):
         traceback.print_tb(ex.__traceback__)
 
 
-async def fitting_model_with_generator(model, generator):
+async def fitting_model_with_generator(path, model):
+    # config.path_to_session_files
     logging.info("Fitting with generator")
     try:
+        generator = Generator(base_path=path, memory=(1, 1), batch_size=64)
         model.fit(generator)
         logging.info("Fitting done")
     except Exception as ex:
