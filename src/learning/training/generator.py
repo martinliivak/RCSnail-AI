@@ -3,14 +3,16 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 
+class GenFiles:
+    frame_file = 'frame_{}_{:07}.npy'
+    numeric_file = 'numeric_{}_{:07}.npy'
+    diff_file = 'diff_{}_{:07}.npy'
+
+
 class Generator:
     def __init__(self, base_path='../../training/', memory=(1, 1), batch_size=32, shuffle=True):
         self.memory_string = 'n{}_m{}'.format(*memory)
         self.path = base_path + self.memory_string + '/'
-
-        self.video_filename = 'frame_{}_{:07}.npy'
-        self.numeric_filename = 'numeric_{}_{:07}.npy'
-        self.diff_filename = 'diff_{}_{:07}.npy'
 
         self.batch_size = batch_size
         self.shuffle = shuffle
@@ -48,9 +50,9 @@ class Generator:
         diffs = []
 
         for i in batch_indexes:
-            mem_frame = np.load(self.path + self.video_filename.format(self.memory_string, i))
-            mem_numeric = np.load(self.path + self.numeric_filename.format(self.memory_string, i))
-            mem_diff = np.load(self.path + self.diff_filename.format(self.memory_string, i))
+            mem_frame = np.load(self.path + GenFiles.frame_file.format(self.memory_string, i))
+            mem_numeric = np.load(self.path + GenFiles.numeric_file.format(self.memory_string, i))
+            mem_diff = np.load(self.path + GenFiles.diff_file.format(self.memory_string, i))
 
             frames.append(mem_frame)
             numerics.append(mem_numeric)

@@ -1,10 +1,11 @@
+import os
 import logging
+import datetime
 
 import numpy as np
 import pandas as pd
 import cv2
-import os
-import datetime
+from src.learning.training.generator import GenFiles
 
 
 class Recorder:
@@ -55,9 +56,7 @@ class Recorder:
 
     def store_session_batch(self, total_count, store_count, memory=(1, 1)):
         memory_string = 'n{}_m{}'.format(*memory)
-        video_filename = 'frame_{}_{:07}.npy'
-        numeric_filename = 'numeric_{}_{:07}.npy'
-        diff_filename = 'diff_{}_{:07}.npy'
+        store_index = total_count - store_count
 
         # frames_batch = self.session_frames[:-num_of_last_to_store]
         # numeric_batch = self.session_telemetry[:-num_of_last_to_store]
@@ -67,11 +66,11 @@ class Recorder:
         np_numerics = pd.DataFrame(self.session_telemetry[:-store_count]).to_numpy()
         np_diffs = pd.DataFrame(self.session_expert_actions[:-store_count]).to_numpy()
 
-        # TODO sampling on batches?
+        # TODO should do sampling on batches?
         for i in range(0, np_frames.shape[0]):
-            np.save(self.session_path + video_filename.format(memory_string, i + total_count - store_count), np_frames[i])
-            np.save(self.session_path + numeric_filename.format(memory_string, i + total_count - store_count), np_numerics[i])
-            np.save(self.session_path + diff_filename.format(memory_string, i + total_count - store_count), np_diffs[i])
+            np.save(self.session_path + GenFiles.frame_file.format(memory_string, i + store_index), np_frames[i])
+            np.save(self.session_path + GenFiles.numeric_file.format(memory_string, i + store_index), np_numerics[i])
+            np.save(self.session_path + GenFiles.diff_file.format(memory_string, i + store_index), np_diffs[i])
 
     def save_session_with_expert(self):
         session_length = len(self.session_telemetry)
