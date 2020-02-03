@@ -1,11 +1,10 @@
-import numpy as np
 import os
-import random
+import numpy as np
 from sklearn.model_selection import train_test_split
 
 
 class Generator:
-    def __init__(self, base_path='../../training/', memory=(1, 1), batch_size=32, shuffle=False):
+    def __init__(self, base_path='../../training/', memory=(1, 1), batch_size=32, shuffle=True):
         self.memory_string = 'n{}_m{}'.format(*memory)
         self.path = base_path + self.memory_string + '/'
 
@@ -27,13 +26,15 @@ class Generator:
         if data == 'train':
             indexes = self.train_indexes
             batch_count = self.train_batch_count
-        else:
+        elif data == 'test':
             indexes = self.test_indexes
             batch_count = self.test_batch_count
+        else:
+            raise ValueError
 
         while True:
             if self.shuffle:
-                random.shuffle(indexes)
+                np.random.shuffle(indexes)
 
             for i in range(batch_count):
                 batch_indexes = indexes[i * self.batch_size:(i + 1) * self.batch_size]

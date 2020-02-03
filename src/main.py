@@ -5,6 +5,8 @@ import signal
 import numpy as np
 import zmq
 from zmq.asyncio import Context
+import os
+import glob
 
 from commons.common_zmq import recv_array_with_json, initialize_subscriber, initialize_publisher
 from commons.configuration_manager import ConfigurationManager
@@ -17,8 +19,8 @@ from src.utilities.recorder import Recorder
 async def main_dagger(context: Context):
     config_manager = ConfigurationManager()
     config = config_manager.config
-    recorder = Recorder(config)
     transformer = TrainingTransformer(config)
+    recorder = Recorder(config, transformer)
 
     data_queue = context.socket(zmq.SUB)
     controls_queue = context.socket(zmq.PUB)
@@ -39,6 +41,9 @@ async def main_dagger(context: Context):
                 continue
 
             data_count += recorder.record_expert(frame, telemetry, expert_actions)
+
+            if data_count % 1000 == 0:
+                recorder.store_session_batch(data_count, 1000)
 
             if config.dagger_training_enabled and data_count % config.dagger_epoch_size == 0 and dagger_iteration < config.dagger_epochs_count:
                 await fitting_model(model, recorder, transformer)
@@ -71,6 +76,10 @@ async def main_dagger(context: Context):
     finally:
         data_queue.close()
         controls_queue.close()
+
+        files = glob.glob(config.path_to_session_files + '*')
+        for f in files:
+            os.remove(f)
 
         if recorder is not None:
             recorder.save_session_with_expert()

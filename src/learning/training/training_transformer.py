@@ -13,13 +13,6 @@ class TrainingTransformer:
         self.resolution = (config.frame_width, config.frame_height)
         self.__labels = LabelCollector()
 
-    def transform_training_from_saved_df(self, telemetry_df):
-        control_labels = self.__labels.collect_columns(telemetry_df).diff()
-        diff_labels = control_labels.add_prefix("d_")
-        training_df = telemetry_df.join(diff_labels)
-
-        return training_df.drop(training_df.tail(1).index)
-
     def transform_aggregation_to_inputs(self, frames_list, telemetry_list, expert_actions_list):
         x_video = self.resize_and_normalize_video(frames_list)
         x_numeric = self.__create_numeric_input_df(telemetry_list).to_numpy()
