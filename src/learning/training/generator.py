@@ -24,6 +24,7 @@ class Generator:
         self.train_batch_count = len(self.train_indexes) // self.batch_size
         self.test_batch_count = len(self.test_indexes) // self.batch_size
 
+    # TODO should return specific data for specific models
     def generate(self, data='train'):
         if data == 'train':
             indexes = self.train_indexes
@@ -50,9 +51,9 @@ class Generator:
         diffs = []
 
         for i in batch_indexes:
-            mem_frame = np.load(self.path + GenFiles.frame_file.format(self.memory_string, i))
-            mem_numeric = np.load(self.path + GenFiles.numeric_file.format(self.memory_string, i))
-            mem_diff = np.load(self.path + GenFiles.diff_file.format(self.memory_string, i))
+            mem_frame = np.load(self.path + GenFiles.frame_file.format(self.memory_string, i), allow_pickle=True)
+            mem_numeric = np.load(self.path + GenFiles.numeric_file.format(self.memory_string, i), allow_pickle=True)
+            mem_diff = np.load(self.path + GenFiles.diff_file.format(self.memory_string, i), allow_pickle=True)
 
             frames.append(mem_frame)
             numerics.append(mem_numeric)

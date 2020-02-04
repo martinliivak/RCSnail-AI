@@ -1,7 +1,7 @@
 from src.learning.training.car_mapping import CarMapping
 
 
-class LabelCollector:
+class Collector:
     def __init__(self):
         self.__mapping = CarMapping()
 

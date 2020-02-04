@@ -11,9 +11,13 @@ recording_fps: 20
 frame_height: 40
 frame_width: 60
 # Procedural flags
-# modes: full_model, shared, full_expert
-prediction_mode: full_expert
+# memory length and interval
+m_length: 1
+m_interval: 1
 
-dagger_training_enabled: false
+# modes: full_model, shared, full_expert
+prediction_mode: shared
+
+dagger_training_enabled: true
 dagger_epoch_size: 3000
 dagger_epochs_count: 6

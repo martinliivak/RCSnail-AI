@@ -14,16 +14,17 @@ class Recorder:
         self.session_path = config.path_to_session_files
         self.resolution = (config.recording_width, config.recording_height)
         self.fps = config.recording_fps
+        self.memory = (config.m_length, config.m_interval)
 
         self.transformer = transformer
+
+        self.frames = []
+        self.telemetry = []
+        self.expert_actions = []
 
         self.session_frames = []
         self.session_telemetry = []
         self.session_expert_actions = []
-
-        self.post_telemetry = []
-        self.post_expert_actions = []
-        self.post_predictions = []
 
     def __get_training_file_name(self, path_to_training):
         date = datetime.datetime.today().strftime("%Y_%m_%d")
@@ -32,45 +33,51 @@ class Recorder:
 
     def record(self, frame, telemetry):
         if telemetry is not None and frame is not None:
-            self.session_frames.append(frame)
-            self.session_telemetry.append(telemetry)
+            self.frames.append(frame)
+            self.telemetry.append(telemetry)
             return 1
         return 0
 
-    def record_expert(self, frame, telemetry, expert_actions):
+    def record_full(self, frame, telemetry, expert_actions):
         if telemetry is not None and frame is not None and expert_actions is not None:
-            self.session_frames.append(frame)
-            self.session_telemetry.append(telemetry)
+            self.frames.append(frame)
+            self.telemetry.append(telemetry)
+            self.expert_actions.append(expert_actions)
+            return 1
+        return 0
+
+    def record_session(self, mem_frame, mem_telemetry, expert_actions):
+        if mem_telemetry is not None and mem_frame is not None and expert_actions is not None:
+            self.session_frames.append(mem_frame)
+            self.session_telemetry.append(mem_telemetry)
             self.session_expert_actions.append(expert_actions)
             return 1
         return 0
 
-    def record_post_mortem(self, telemetry, expert_actions, prediction):
-        if telemetry is not None and expert_actions is not None and prediction is not None:
-            self.post_telemetry.append(telemetry)
-            self.post_expert_actions.append(expert_actions)
-            self.post_predictions.append(prediction)
-
     def get_current_data(self):
-        return self.session_frames, self.session_telemetry, self.session_expert_actions
+        return self.frames, self.telemetry, self.expert_actions
 
-    def store_session_batch(self, total_count, store_count, memory=(1, 1)):
-        memory_string = 'n{}_m{}'.format(*memory)
-        store_index = total_count - store_count
+    def store_session_batch(self, batch_count):
+        stored_count = len(os.listdir(self.session_path)) // 3
+        memory_string = 'n{}_m{}'.format(*self.memory)
 
-        np_frames = self.transformer.resize_and_normalize_video(self.session_frames[store_index:total_count])
-        np_numerics = pd.DataFrame(self.session_telemetry[store_index:total_count]).to_numpy()
-        np_diffs = pd.DataFrame(self.session_expert_actions[store_index:total_count]).to_numpy()
+        np_frames = np.array(self.session_frames[:batch_count])
+        np_numerics = np.array(self.session_telemetry[:batch_count])
+        np_diffs = np.array(self.session_expert_actions[:batch_count])
+
+        del self.session_frames[:batch_count]
+        del self.session_telemetry[:batch_count]
+        del self.session_expert_actions[:batch_count]
 
         # TODO should do sampling on batches?
         for i in range(0, np_frames.shape[0]):
-            np.save(self.session_path + GenFiles.frame_file.format(memory_string, i + store_index), np_frames[i])
-            np.save(self.session_path + GenFiles.numeric_file.format(memory_string, i + store_index), np_numerics[i])
-            np.save(self.session_path + GenFiles.diff_file.format(memory_string, i + store_index), np_diffs[i])
+            np.save(self.session_path + GenFiles.frame_file.format(memory_string, i + stored_count), np_frames[i])
+            np.save(self.session_path + GenFiles.numeric_file.format(memory_string, i + stored_count), np_numerics[i])
+            np.save(self.session_path + GenFiles.diff_file.format(memory_string, i + stored_count), np_diffs[i])
 
     def save_session_with_expert(self):
-        session_length = len(self.session_telemetry)
-        assert session_length == len(self.session_frames) == len(self.session_expert_actions), "Stored actions are not of same length."
+        session_length = len(self.telemetry)
+        assert session_length == len(self.frames) == len(self.expert_actions), "Stored actions are not of same length."
 
         if session_length <= 0:
             logging.info("Nothing to record, closing.")
@@ -84,33 +91,12 @@ class Recorder:
                               self.resolution)
 
         for i in range(session_length):
-            out.write(self.session_frames[i].astype(np.uint8))
+            out.write(self.frames[i].astype(np.uint8))
         out.release()
 
-        df_telem = pd.DataFrame(self.session_telemetry)
-        df_expert = pd.DataFrame(self.session_expert_actions)
+        df_telem = pd.DataFrame(self.telemetry)
+        df_expert = pd.DataFrame(self.expert_actions)
         df = pd.concat([df_telem, df_expert], axis=1)
         df.to_csv(self.storage_full_path + '.csv')
 
         logging.info("Telemetry, expert, and video saved successfully.")
-
-    def save_session_with_predictions(self):
-        session_length = len(self.post_telemetry)
-
-        if session_length <= 0:
-            logging.info("Nothing to record, closing.")
-            return
-
-        logging.info("Number of training instances to be saved: " + str(session_length))
-
-        df_telem = pd.DataFrame(self.post_telemetry)
-        df_expert = pd.DataFrame(self.post_expert_actions)
-        df_preds = pd.DataFrame(self.post_predictions)
-
-        df_expert.columns = [str(col) + '_exp' for col in df_expert.columns]
-        df_preds.columns = [str(col) + '_pred' for col in df_preds.columns]
-
-        df = pd.concat([df_telem, df_expert, df_preds], axis=1)
-        df.to_csv(self.storage_full_path + '_with_predictions.csv')
-
-        logging.info("Super info saved successfully.")

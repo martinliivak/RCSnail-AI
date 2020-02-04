@@ -3,9 +3,12 @@ import numpy as np
 
 # axis=2 for frames, axis=0 for telems
 def memory_creator(instance, memory_list, length=4, interval=2, axis=2):
-    memory_list.append(instance)
+    if instance is None:
+        return None
 
+    memory_list.append(instance)
     near_memory = memory_list[::-interval]
+
     if len(near_memory) < length:
         return None
 

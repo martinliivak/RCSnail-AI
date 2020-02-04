@@ -1,68 +1,76 @@
+import os
+import glob
+import logging
 import traceback
 import asyncio
-import logging
 import signal
 import numpy as np
 import zmq
 from zmq.asyncio import Context
-import os
-import glob
 
 from commons.common_zmq import recv_array_with_json, initialize_subscriber, initialize_publisher
 from commons.configuration_manager import ConfigurationManager
 
 from src.learning.model_wrapper import ModelWrapper
 from src.learning.training.generator import Generator
-from src.learning.training.training_transformer import TrainingTransformer
+from utilities.transformer import Transformer
 from src.utilities.recorder import Recorder
 
 
 async def main_dagger(context: Context):
     config_manager = ConfigurationManager()
-    config = config_manager.config
-    transformer = TrainingTransformer(config)
-    recorder = Recorder(config, transformer)
+    conf = config_manager.config
+    transformer = Transformer(conf)
+    recorder = Recorder(conf, transformer)
 
     data_queue = context.socket(zmq.SUB)
     controls_queue = context.socket(zmq.PUB)
 
     try:
-        model = ModelWrapper(config)
+        model = ModelWrapper(conf)
+        mem_slice_frames = []
+        mem_slice_numerics = []
         data_count = 0
         dagger_iteration = 0
 
-        await initialize_subscriber(data_queue, config.data_queue_port)
-        await initialize_publisher(controls_queue, config.controls_queue_port)
+        await initialize_subscriber(data_queue, conf.data_queue_port)
+        await initialize_publisher(controls_queue, conf.controls_queue_port)
 
         while True:
             frame, data = await recv_array_with_json(queue=data_queue)
-            telemetry, expert_actions = data
-
-            if frame is None or telemetry is None or expert_actions is None:
+            telemetry, expert_action = data
+            if frame is None or telemetry is None or expert_action is None:
                 continue
 
-            data_count += recorder.record_expert(frame, telemetry, expert_actions)
+            recorder.record_full(frame, telemetry, expert_action)
 
+            mem_frame = transformer.session_frame(frame, mem_slice_frames)
+            mem_telemetry = transformer.session_numeric_input(telemetry, mem_slice_numerics)
+            mem_expert_action = transformer.session_expert_action(expert_action)
+            if mem_frame is None or mem_telemetry is None:
+                continue
+
+            data_count += recorder.record_session(mem_frame, mem_telemetry, mem_expert_action)
             if data_count % 1000 == 0:
-                recorder.store_session_batch(data_count, 1000)
+                recorder.store_session_batch(1000)
 
-            if config.dagger_training_enabled and data_count % config.dagger_epoch_size == 0 and dagger_iteration < config.dagger_epochs_count:
-                await fitting_model(model, recorder, transformer)
+            if conf.dagger_training_enabled and data_count % conf.dagger_epoch_size == 0 and dagger_iteration < conf.dagger_epochs_count:
+                await fit_model_with_generator(model, conf)
                 dagger_iteration += 1
 
             try:
-                if config.prediction_mode == 'full_model':
-                    prediction = model.predict(frame, telemetry).to_dict()
-                elif config.prediction_mode == 'shared':
+                if conf.prediction_mode == 'full_model':
+                    prediction = model.predict(mem_frame, mem_telemetry).to_dict()
+                elif conf.prediction_mode == 'shared':
                     expert_probability = np.exp(-0.15 * dagger_iteration)
                     model_probability = np.random.random()
 
                     if expert_probability > model_probability:
-                        prediction = expert_actions
+                        prediction = expert_action
                     else:
-                        prediction = model.predict(frame, telemetry).to_dict()
-                elif config.prediction_mode == 'full_expert':
-                    prediction = expert_actions
+                        prediction = model.predict(mem_frame, mem_telemetry).to_dict()
+                elif conf.prediction_mode == 'full_expert':
+                    prediction = expert_action
                 else:
                     raise ValueError
 
@@ -78,7 +86,7 @@ async def main_dagger(context: Context):
         data_queue.close()
         controls_queue.close()
 
-        files = glob.glob(config.path_to_session_files + '*')
+        files = glob.glob(conf.path_to_session_files + '*')
         for f in files:
             os.remove(f)
         logging.info("Session partials deleted successfully.")
@@ -87,7 +95,7 @@ async def main_dagger(context: Context):
             recorder.save_session_with_expert()
 
 
-async def fitting_model(model, recorder, transformer):
+async def fit_model(model, recorder, transformer):
     logging.info("Fitting")
     try:
         frames, telemetry, expert_actions = recorder.get_current_data()
@@ -100,11 +108,10 @@ async def fitting_model(model, recorder, transformer):
         traceback.print_tb(ex.__traceback__)
 
 
-async def fitting_model_with_generator(path, model):
-    # config.path_to_session_files
+async def fit_model_with_generator(model, conf):
     logging.info("Fitting with generator")
     try:
-        generator = Generator(base_path=path, memory=(1, 1), batch_size=64)
+        generator = Generator(base_path=conf.path_to_session_files, memory=(conf.m_length, conf.m_interval), batch_size=32)
         model.fit(generator)
         logging.info("Fitting done")
     except Exception as ex:

@@ -8,8 +8,13 @@ from src.learning.training.car_mapping import CarMapping
 
 
 class ModelWrapper:
-    def __init__(self, config, model_file=None):
+    def __init__(self, config, model_file=None, frames_shape=(40, 60, 3), numeric_shape=(4,), output_shape=4):
         self.__path_to_models = config.path_to_models
+
+        # TODO try to make this dynamic based on actual data?
+        self.__frames_shape = (40, 60, 3 * config.m_length)
+        self.__numeric_shape = (2 * config.m_length,)
+        self.__output_shape = 1
 
         if model_file is not None:
             self.model = self.__load_model(model_file)
@@ -20,9 +25,9 @@ class ModelWrapper:
         self.__mapping = CarMapping()
 
     def __create_new_model(self):
-        mlp = create_mlp()
-        cnn = create_cnn()
-        return create_multi_model(mlp, cnn)
+        mlp = create_mlp(input_shape=self.__numeric_shape)
+        cnn = create_cnn(input_shape=self.__frames_shape)
+        return create_multi_model(mlp, cnn, output_shape=self.__output_shape)
 
     def __load_model(self, model_filename: str):
         from tensorflow.keras.models import load_model
@@ -56,16 +61,20 @@ class ModelWrapper:
         except Exception as ex:
             print("Generator training exception: {}".format(ex))
 
-    def predict(self, frame, telemetry):
+    def predict(self, mem_frame, mem_telemetry):
+        print(mem_frame.shape)
+        print(mem_telemetry.shape)
+        # gear, steering, throttle, braking
+        # TODO ideally send in full memorized frames and telemetry and do telemetry subsetting here
         # gear = int(telemetry[self.__mapping.gear])
+        # steering = float(mem_telemetry[self.__mapping.steering])
+        # throttle = float(mem_telemetry[self.__mapping.throttle])
         # braking = float(telemetry[self.__mapping.braking])
-        steering = float(telemetry[self.__mapping.steering])
-        throttle = float(telemetry[self.__mapping.throttle])
+        # steering_inputs = np.array([steering, throttle])
 
-        numeric_inputs = np.array([steering, throttle])
-
-        predictions = self.model.predict([frame[np.newaxis, :], numeric_inputs[np.newaxis, :]])
-        return updates_from_prediction(predictions)
+        # predictions = self.model.predict([mem_frame[np.newaxis, :], steering_inputs[np.newaxis, :]])
+        # return updates_from_prediction(predictions)
+        return CarControlUpdates(1, 0.2, 0.0, 0.0)
 
 
 def updates_from_prediction(prediction):
