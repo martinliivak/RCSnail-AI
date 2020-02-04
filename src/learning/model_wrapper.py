@@ -40,25 +40,11 @@ class ModelWrapper:
         self.model.save(self.__path_to_models + model_filename + ".h5")
         print("Model has been saved to {} as {}.h5".format(self.__path_to_models, model_filename))
 
-    def fit(self, train_tuple, test_tuple, epochs=1, batch_size=32, verbose=1):
-        try:
-            frames_train, numeric_train, diffs_train = train_tuple
-            frames_test, numeric_test, diffs_test = test_tuple
-
-            self.model.fit(
-                [frames_train, numeric_train], diffs_train,
-                validation_data=([frames_test, numeric_test], diffs_test),
-                epochs=epochs,
-                batch_size=batch_size,
-                verbose=verbose)
-        except Exception as ex:
-            print("Training exception: {}".format(ex))
-
     def fit(self, generator, epochs=1, verbose=1):
         try:
-            self.model.fit(generator.generate(data='train', column_mode='steering'),
+            self.model.fit(generator.generate(data='train'),
                            steps_per_epoch=generator.train_batch_count,
-                           validation_data=generator.generate(data='test', column_mode='steering'),
+                           validation_data=generator.generate(data='test'),
                            validation_steps=generator.test_batch_count,
                            epochs=epochs, verbose=verbose)
         except Exception as ex:

@@ -95,19 +95,6 @@ async def main_dagger(context: Context):
             recorder.save_session_with_expert()
 
 
-async def fit_model(model, recorder, transformer):
-    logging.info("Fitting")
-    try:
-        frames, telemetry, expert_actions = recorder.get_current_data()
-        train, test = transformer.transform_aggregation_to_inputs(frames, telemetry, expert_actions)
-
-        model.fit(train, test)
-        logging.info("Fitting done")
-    except Exception as ex:
-        print("Fitting exception: {}".format(ex))
-        traceback.print_tb(ex.__traceback__)
-
-
 async def fit_model_with_generator(model, conf):
     logging.info("Fitting with generator")
     try:
