@@ -5,17 +5,20 @@ from commons.car_controls import CarControlUpdates
 
 from src.learning.models import create_mlp, create_cnn, create_multi_model
 from src.learning.training.car_mapping import CarMapping
+from utilities.memory_maker import MemoryMaker
 
 
 class ModelWrapper:
     def __init__(self, config, model_file=None, frames_shape=(40, 60, 3), numeric_shape=(4,), output_shape=4):
         self.__path_to_models = config.path_to_models
+        self.__memory = MemoryMaker(config)
 
         # TODO try to make this dynamic based on actual data?
         self.__frames_shape = (40, 60, 3 * config.m_length)
         self.__numeric_shape = (2 * config.m_length,)
         self.__output_shape = 1
 
+        # TODO split model up
         if model_file is not None:
             self.model = self.__load_model(model_file)
         else:
@@ -53,28 +56,20 @@ class ModelWrapper:
 
     def fit(self, generator, epochs=1, verbose=1):
         try:
-            self.model.fit(generator.generate(data='train'),
+            self.model.fit(generator.generate(data='train', column_mode='steering'),
                            steps_per_epoch=generator.train_batch_count,
-                           validation_data=generator.generate(data='test'),
+                           validation_data=generator.generate(data='test', column_mode='steering'),
                            validation_steps=generator.test_batch_count,
                            epochs=epochs, verbose=verbose)
         except Exception as ex:
             print("Generator training exception: {}".format(ex))
 
     def predict(self, mem_frame, mem_telemetry):
-        print(mem_frame.shape)
-        print(mem_telemetry.shape)
         # gear, steering, throttle, braking
-        # TODO ideally send in full memorized frames and telemetry and do telemetry subsetting here
-        # gear = int(telemetry[self.__mapping.gear])
-        # steering = float(mem_telemetry[self.__mapping.steering])
-        # throttle = float(mem_telemetry[self.__mapping.throttle])
-        # braking = float(telemetry[self.__mapping.braking])
-        # steering_inputs = np.array([steering, throttle])
+        mem_steering = self.__memory.columns_from_memorized(mem_telemetry, columns=(1, 2))
 
-        # predictions = self.model.predict([mem_frame[np.newaxis, :], steering_inputs[np.newaxis, :]])
-        # return updates_from_prediction(predictions)
-        return CarControlUpdates(1, 0.2, 0.0, 0.0)
+        predictions = self.model.predict([mem_frame[np.newaxis, :], mem_steering[np.newaxis, :]])
+        return updates_from_prediction(predictions)
 
 
 def updates_from_prediction(prediction):

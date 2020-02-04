@@ -1,21 +1,16 @@
-import gc
-
 import numpy as np
 import pandas as pd
 import cv2
 from sklearn.model_selection import train_test_split
 
 from src.learning.training.collector import Collector
+from src.utilities.memory_maker import MemoryMaker
 
 
 class Transformer:
-    def __init__(self, config, memory=None):
+    def __init__(self, config, memory_tuple=None):
         self.resolution = (config.frame_width, config.frame_height)
-        if memory is not None:
-            self.memory_length, self.memory_interval = memory
-        else:
-            self.memory_length = config.m_length
-            self.memory_interval = config.m_interval
+        self.__memory = MemoryMaker(config, memory_tuple)
         self.__labels = Collector()
 
     def transform_aggregation_to_inputs(self, frames_list, telemetry_list, expert_actions_list):
@@ -30,11 +25,11 @@ class Transformer:
 
     def __create_numeric_input_df(self, telemetry_list):
         telemetry_df = pd.DataFrame.from_records(telemetry_list, columns=telemetry_list[0].keys())
-        return self.__labels.collect_columns(telemetry_df, self.__labels.steering_columns())
+        return self.__labels.collect_df_columns(telemetry_df, self.__labels.steering_columns())
 
     def __create_label_df(self, expert_actions_list):
         expert_actions_df = pd.DataFrame.from_records(expert_actions_list, columns=expert_actions_list[0].keys())
-        return self.__labels.collect_columns(expert_actions_df, self.__labels.diff_steering_columns())
+        return self.__labels.collect_df_columns(expert_actions_df, self.__labels.diff_steering_columns())
 
     def resize_and_normalize_video(self, frames_list):
         resized_frames = np.zeros((len(frames_list), self.resolution[1], self.resolution[0], 3), dtype=np.float32)
@@ -45,29 +40,13 @@ class Transformer:
     def session_frame(self, frame, memory_list):
         resized = cv2.resize(frame, dsize=self.resolution, interpolation=cv2.INTER_CUBIC).astype(np.float32)
         normed = resized / 255
-        return self.__memory_creator(normed, memory_list, axis=2)
+        return self.__memory.memory_creator(normed, memory_list, axis=2)
 
     def session_numeric_input(self, telemetry, memory_list):
         telemetry_df = pd.DataFrame.from_records([telemetry], columns=telemetry.keys())
-        telemetry_np = self.__labels.collect_columns(telemetry_df, self.__labels.numeric_columns()).to_numpy()[0]
-        return self.__memory_creator(telemetry_np, memory_list, axis=0)
+        telemetry_np = self.__labels.collect_df_columns(telemetry_df, self.__labels.numeric_columns()).to_numpy()[0]
+        return self.__memory.memory_creator(telemetry_np, memory_list, axis=0)
 
     def session_expert_action(self, expert_action):
         df = pd.DataFrame.from_records([expert_action], columns=expert_action.keys())
-        return self.__labels.collect_columns(df, self.__labels.diff_columns()).to_numpy()[0]
-
-    # axis=2 for frames, axis=0 for telems
-    def __memory_creator(self, instance, memory_list, axis=2):
-        if instance is None:
-            return None
-
-        memory_list.append(instance)
-        near_memory = memory_list[::-self.memory_interval]
-
-        if len(near_memory) < self.memory_length:
-            return None
-
-        if len(memory_list) >= self.memory_length * self.memory_interval:
-            memory_list.pop(0)
-
-        return np.concatenate(near_memory, axis=axis)
+        return self.__labels.collect_df_columns(df, self.__labels.diff_columns()).to_numpy()[0]

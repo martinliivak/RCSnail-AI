@@ -111,7 +111,7 @@ async def fit_model(model, recorder, transformer):
 async def fit_model_with_generator(model, conf):
     logging.info("Fitting with generator")
     try:
-        generator = Generator(base_path=conf.path_to_session_files, memory=(conf.m_length, conf.m_interval), batch_size=32)
+        generator = Generator(conf, memory_tuple=(conf.m_length, conf.m_interval), batch_size=32)
         model.fit(generator)
         logging.info("Fitting done")
     except Exception as ex:
