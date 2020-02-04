@@ -58,13 +58,9 @@ class Recorder:
         memory_string = 'n{}_m{}'.format(*memory)
         store_index = total_count - store_count
 
-        # frames_batch = self.session_frames[:-num_of_last_to_store]
-        # numeric_batch = self.session_telemetry[:-num_of_last_to_store]
-        # diffs_batch = self.session_expert_actions[:-num_of_last_to_store]
-
-        np_frames = self.transformer.resize_and_normalize_video(self.session_frames[:-store_count])
-        np_numerics = pd.DataFrame(self.session_telemetry[:-store_count]).to_numpy()
-        np_diffs = pd.DataFrame(self.session_expert_actions[:-store_count]).to_numpy()
+        np_frames = self.transformer.resize_and_normalize_video(self.session_frames[store_index:total_count])
+        np_numerics = pd.DataFrame(self.session_telemetry[store_index:total_count]).to_numpy()
+        np_diffs = pd.DataFrame(self.session_expert_actions[store_index:total_count]).to_numpy()
 
         # TODO should do sampling on batches?
         for i in range(0, np_frames.shape[0]):

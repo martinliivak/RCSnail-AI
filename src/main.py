@@ -81,6 +81,7 @@ async def main_dagger(context: Context):
         files = glob.glob(config.path_to_session_files + '*')
         for f in files:
             os.remove(f)
+        logging.info("Session partials deleted successfully.")
 
         if recorder is not None:
             recorder.save_session_with_expert()
@@ -109,6 +110,7 @@ async def fitting_model_with_generator(path, model):
     except Exception as ex:
         print("Fitting exception: {}".format(ex))
         traceback.print_tb(ex.__traceback__)
+
 
 def cancel_tasks(loop):
     for task in asyncio.Task.all_tasks(loop):
