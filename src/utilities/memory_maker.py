@@ -27,5 +27,5 @@ class MemoryMaker:
         return np.concatenate(near_memory, axis=axis)
 
     def columns_from_memorized(self, memorized, columns=(0, 1)):
-        reshaped = memorized.reshape((self.memory_length, len(columns)))
+        reshaped = memorized.reshape((self.memory_length, 4))
         return np.concatenate(reshaped[:, columns], axis=0)
