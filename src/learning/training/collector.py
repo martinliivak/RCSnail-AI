@@ -1,11 +1,11 @@
 from src.learning.training.car_mapping import CarMapping
 
 
-class LabelCollector:
+class Collector:
     def __init__(self):
         self.__mapping = CarMapping()
 
-    def collect_columns(self, telemetry_df, column_list):
+    def collect_df_columns(self, telemetry_df, column_list):
         return telemetry_df[column_list]
 
     def numeric_columns(self):

@@ -5,12 +5,20 @@ from commons.car_controls import CarControlUpdates
 
 from src.learning.models import create_mlp, create_cnn, create_multi_model
 from src.learning.training.car_mapping import CarMapping
+from utilities.memory_maker import MemoryMaker
 
 
 class ModelWrapper:
-    def __init__(self, config, model_file=None):
+    def __init__(self, config, model_file=None, frames_shape=(40, 60, 3), numeric_shape=(4,), output_shape=4):
         self.__path_to_models = config.path_to_models
+        self.__memory = MemoryMaker(config)
 
+        # TODO try to make this dynamic based on actual data?
+        self.__frames_shape = (40, 60, 3 * config.m_length)
+        self.__numeric_shape = (2 * config.m_length,)
+        self.__output_shape = 1
+
+        # TODO split model up
         if model_file is not None:
             self.model = self.__load_model(model_file)
         else:
@@ -20,9 +28,9 @@ class ModelWrapper:
         self.__mapping = CarMapping()
 
     def __create_new_model(self):
-        mlp = create_mlp()
-        cnn = create_cnn()
-        return create_multi_model(mlp, cnn)
+        mlp = create_mlp(input_shape=self.__numeric_shape)
+        cnn = create_cnn(input_shape=self.__frames_shape)
+        return create_multi_model(mlp, cnn, output_shape=self.__output_shape)
 
     def __load_model(self, model_filename: str):
         from tensorflow.keras.models import load_model
@@ -32,32 +40,21 @@ class ModelWrapper:
         self.model.save(self.__path_to_models + model_filename + ".h5")
         print("Model has been saved to {} as {}.h5".format(self.__path_to_models, model_filename))
 
-    def fit(self, train_tuple, test_tuple, epochs=1, batch_size=32, verbose=1):
+    def fit(self, generator, epochs=1, verbose=1):
         try:
-            frames_train, numeric_train, diffs_train = train_tuple
-            frames_test, numeric_test, diffs_test = test_tuple
-
-            # print("train_num_inp: {}".format(train_numeric_inputs))
-            # print("train_labels: {}".format(train_labels))
-
-            self.model.fit(
-                [frames_train, numeric_train], diffs_train,
-                validation_data=([frames_test, numeric_test], diffs_test),
-                epochs=epochs,
-                batch_size=batch_size,
-                verbose=verbose)
+            self.model.fit(generator.generate(data='train'),
+                           steps_per_epoch=generator.train_batch_count,
+                           validation_data=generator.generate(data='test'),
+                           validation_steps=generator.test_batch_count,
+                           epochs=epochs, verbose=verbose)
         except Exception as ex:
-            print("Training exception: {}".format(ex))
+            print("Generator training exception: {}".format(ex))
 
-    def predict(self, frame, telemetry):
-        # gear = int(telemetry[self.__mapping.gear])
-        # braking = float(telemetry[self.__mapping.braking])
-        steering = float(telemetry[self.__mapping.steering])
-        throttle = float(telemetry[self.__mapping.throttle])
+    def predict(self, mem_frame, mem_telemetry):
+        # gear, steering, throttle, braking
+        mem_steering = self.__memory.columns_from_memorized(mem_telemetry, columns=(1, 2))
 
-        numeric_inputs = np.array([steering, throttle])
-
-        predictions = self.model.predict([frame[np.newaxis, :], numeric_inputs[np.newaxis, :]])
+        predictions = self.model.predict([mem_frame[np.newaxis, :], mem_steering[np.newaxis, :]])
         return updates_from_prediction(predictions)
 
 
