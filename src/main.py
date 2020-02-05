@@ -27,7 +27,7 @@ async def main_dagger(context: Context):
     controls_queue = context.socket(zmq.PUB)
 
     try:
-        model = ModelWrapper(conf)
+        model = ModelWrapper(conf, model_file='model_n1_m1_1')
         mem_slice_frames = []
         mem_slice_numerics = []
         data_count = 0

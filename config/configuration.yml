@@ -16,7 +16,7 @@ m_length: 1
 m_interval: 1
 
 # modes: full_model, shared, full_expert
-prediction_mode: shared
+prediction_mode: full_expert
 
 dagger_training_enabled: true
 dagger_epoch_size: 3000
