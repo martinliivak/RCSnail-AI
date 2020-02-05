@@ -6,11 +6,13 @@ from src.utilities.memory_maker import MemoryMaker
 
 
 class GenFiles:
-    frame_file = 'frame_{}_{:07}.npy'
-    numeric_file = 'numeric_{}_{:07}.npy'
-    diff_file = 'diff_{}_{:07}.npy'
-    steer_file = 'steer_{}_{:07}.npy'
-    steer_diff_file = 'steer_diff_{}_{:07}.npy'
+    frame = 'frame_{}_{:07}.npy'
+    numeric = 'numeric_{}_{:07}.npy'
+    diff = 'diff_{}_{:07}.npy'
+    steer = 'steer_{}_{:07}.npy'
+    steer_diff = 'steer_diff_{}_{:07}.npy'
+
+    steer_sampling = 'steer_sample_{}.npy'
 
 
 class Generator:
@@ -32,11 +34,21 @@ class Generator:
         self.separate_files = separate_files
         self.column_mode = column_mode
 
-        indexes = list(range(0, self.__count_instances()))
+        indexes = self.__apply_upsampling()
         self.train_indexes, self.test_indexes = train_test_split(indexes)
 
         self.train_batch_count = len(self.train_indexes) // self.batch_size
         self.test_batch_count = len(self.test_indexes) // self.batch_size
+
+    def __apply_upsampling(self):
+        indexes = np.arange(self.__count_instances())
+        if not os.path.isfile(self.path + GenFiles.steer_sampling.format(self.memory_string)):
+            return indexes
+
+        sampling_multipliers = np.load(self.path + GenFiles.steer_sampling.format(self.memory_string), allow_pickle=True)
+        assert indexes.shape[0] == sampling_multipliers.shape[0], 'Indexes have different lengths to sampling!'
+
+        return np.repeat(indexes, sampling_multipliers)
 
     def __count_instances(self):
         return len([fn for fn in os.listdir(self.path) if fn.startswith('frame_')])
@@ -67,23 +79,23 @@ class Generator:
         diffs = []
 
         for i in batch_indexes:
-            frame = np.load(self.path + GenFiles.frame_file.format(self.memory_string, i), allow_pickle=True)
+            frame = np.load(self.path + GenFiles.frame.format(self.memory_string, i), allow_pickle=True)
 
             if self.column_mode == 'steer':
                 if self.separate_files:
-                    numeric = np.load(self.path + GenFiles.steer_file.format(self.memory_string, i), allow_pickle=True)
-                    diff = np.load(self.path + GenFiles.steer_diff_file.format(self.memory_string, i), allow_pickle=True)
+                    numeric = np.load(self.path + GenFiles.steer.format(self.memory_string, i), allow_pickle=True)
+                    diff = np.load(self.path + GenFiles.steer_diff.format(self.memory_string, i), allow_pickle=True)
                 else:
-                    numeric = np.load(self.path + GenFiles.numeric_file.format(self.memory_string, i), allow_pickle=True)
-                    diff = np.load(self.path + GenFiles.diff_file.format(self.memory_string, i), allow_pickle=True)
+                    numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, i), allow_pickle=True)
+                    diff = np.load(self.path + GenFiles.diff.format(self.memory_string, i), allow_pickle=True)
 
                 # steering and throttle
                 numeric = self.__memory.columns_from_memorized(numeric, (1, 2))
                 # steering
                 diff = diff[1]
             elif self.column_mode == 'all':
-                numeric = np.load(self.path + GenFiles.numeric_file.format(self.memory_string, i), allow_pickle=True)
-                diff = np.load(self.path + GenFiles.diff_file.format(self.memory_string, i), allow_pickle=True)
+                numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, i), allow_pickle=True)
+                diff = np.load(self.path + GenFiles.diff.format(self.memory_string, i), allow_pickle=True)
             else:
                 raise ValueError
 

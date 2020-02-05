@@ -71,9 +71,9 @@ class Recorder:
 
         # TODO should do sampling on batches?
         for i in range(0, np_frames.shape[0]):
-            np.save(self.session_path + GenFiles.frame_file.format(memory_string, i + stored_count), np_frames[i])
-            np.save(self.session_path + GenFiles.numeric_file.format(memory_string, i + stored_count), np_numerics[i])
-            np.save(self.session_path + GenFiles.diff_file.format(memory_string, i + stored_count), np_diffs[i])
+            np.save(self.session_path + GenFiles.frame.format(memory_string, i + stored_count), np_frames[i])
+            np.save(self.session_path + GenFiles.numeric.format(memory_string, i + stored_count), np_numerics[i])
+            np.save(self.session_path + GenFiles.diff.format(memory_string, i + stored_count), np_diffs[i])
 
     def save_session_with_expert(self):
         session_length = len(self.telemetry)
