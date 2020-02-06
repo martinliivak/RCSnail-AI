@@ -33,4 +33,4 @@ class TrainingFileReader:
         return pd.read_csv(self.path_to_training + filename)
 
     def read_specific_telemetry_columns(self, filename, columns):
-        return pd.read_csv(self.path_to_training + filename, usecols=columns)
+        return pd.read_csv(self.path_to_training + filename, usecols=columns)[columns]

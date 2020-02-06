@@ -34,3 +34,8 @@ class Collector:
         return [
             self.__mapping.d_steering
         ]
+
+    def label_steering_column(self):
+        return [
+            self.__mapping.steering
+        ]

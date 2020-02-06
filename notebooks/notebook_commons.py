@@ -18,11 +18,24 @@ def memory_creator(instance, memory_list, length=4, interval=2, axis=2):
     return np.concatenate(near_memory, axis=axis)
 
 
-def read_stored_data(reader, transformer, filename, numeric_columns, diff_columns):
+def read_stored_data_with_labels(reader, transformer, filename, numeric_columns, label_columns):
     telemetry = reader.read_specific_telemetry_columns(filename + '.csv', numeric_columns)
-    diffs = reader.read_specific_telemetry_columns(filename + '.csv', diff_columns)
+    diffs = reader.read_specific_telemetry_columns(filename + '.csv', label_columns)
     frames = reader.read_video(filename + '.avi')
     resized_frames = transformer.resize_and_normalize_video(frames)
+
+    return resized_frames, telemetry.to_numpy(), diffs.to_numpy()
+
+
+def read_stored_data_with_shifted_labels(reader, transformer, filename, numeric_columns, label_columns):
+    telemetry = reader.read_specific_telemetry_columns(filename + '.csv', numeric_columns)
+    telemetry.drop(telemetry.tail(1).index, inplace=True)
+
+    diffs = reader.read_specific_telemetry_columns(filename + '.csv', label_columns)
+    diffs.drop(diffs.head(1).index, inplace=True)
+
+    frames = reader.read_video(filename + '.avi')
+    resized_frames = transformer.resize_and_normalize_video_shifted(frames)
 
     return resized_frames, telemetry.to_numpy(), diffs.to_numpy()
 
