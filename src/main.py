@@ -64,12 +64,12 @@ async def main_dagger(context: Context):
                 dagger_iteration += 1
 
             try:
-                if conf.prediction_mode == 'full_model':
+                if conf.control_mode == 'full_model':
                     prediction = model.predict(mem_frame, mem_telemetry).to_dict()
                     # TODO when more aspects are predicted remove these
                     prediction['d_gear'] = mem_expert_action[0]
                     prediction['d_throttle'] = mem_expert_action[2]
-                elif conf.prediction_mode == 'shared':
+                elif conf.control_mode == 'shared':
                     expert_probability = np.exp(-0.15 * dagger_iteration)
                     model_probability = np.random.random()
 
@@ -77,7 +77,7 @@ async def main_dagger(context: Context):
                         prediction = expert_action
                     else:
                         prediction = model.predict(mem_frame, mem_telemetry).to_dict()
-                elif conf.prediction_mode == 'full_expert':
+                elif conf.control_mode == 'full_expert':
                     prediction = expert_action
                 else:
                     raise ValueError

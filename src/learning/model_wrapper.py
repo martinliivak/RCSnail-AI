@@ -12,6 +12,7 @@ class ModelWrapper:
     def __init__(self, config, model_file=None, frames_shape=(40, 60, 3), numeric_shape=(4,), output_shape=4):
         self.__path_to_models = config.path_to_models
         self.__memory = MemoryMaker(config)
+        self.__prediction_mode = config.prediction_mode
 
         # TODO try to make this dynamic based on actual data?
         self.__frames_shape = (40, 60, 3 * config.m_length)
@@ -56,20 +57,19 @@ class ModelWrapper:
         mem_steering = self.__memory.columns_from_memorized(mem_telemetry, columns=(1, 2))
 
         predictions = self.model.predict([mem_frame[np.newaxis, :], mem_steering[np.newaxis, :]])
-        return updates_from_prediction(predictions)
+        return self.updates_from_prediction(predictions)
 
+    def updates_from_prediction(self, prediction):
+        prediction_values = prediction.tolist()[0]
+        # print("preds: {}".format(prediction_values)
 
-def updates_from_prediction(prediction):
-    prediction_values = prediction.tolist()[0]
-    # print("preds: {}".format(prediction_values)
+        # predicted_gear = round_predicted_gear(prediction_values[0])
+        # predicted_steering = np.clip(prediction_values[1], -0.1, 0.1)
+        # predicted_throttle = np.clip(prediction_values[2], 0, 0.1)
+        # predicted_braking = round_predicted_braking(prediction_values[3])
 
-    # predicted_gear = round_predicted_gear(prediction_values[0])
-    # predicted_steering = np.clip(prediction_values[1], -0.1, 0.1)
-    # predicted_throttle = np.clip(prediction_values[2], 0, 0.1)
-    # predicted_braking = round_predicted_braking(prediction_values[3])
-
-    # return CarControlUpdates(predicted_gear, predicted_steering, predicted_throttle, predicted_braking)
-    return CarControlUpdates(1, prediction_values[0], 0.0, 0.0)
+        # return CarControlUpdates(predicted_gear, predicted_steering, predicted_throttle, predicted_braking)
+        return CarControlUpdates(1, prediction_values[0], 0.0, 0.0, self.__prediction_mode)
 
 
 def round_predicted_gear(predicted_gear):
