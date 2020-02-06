@@ -34,6 +34,7 @@ class ModelWrapper:
 
     def __load_model(self, model_filename: str):
         from tensorflow.keras.models import load_model
+        print("Loaded " + model_filename)
         return load_model(self.__path_to_models + model_filename + ".h5")
 
     def save_model(self, model_filename: str):

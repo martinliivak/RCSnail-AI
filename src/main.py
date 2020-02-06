@@ -56,7 +56,7 @@ async def main_dagger(context: Context):
                 continue
 
             data_count += recorder.record_session(mem_frame, mem_telemetry, mem_expert_action)
-            if data_count % 1000 == 0:
+            if conf.dagger_training_enabled and data_count % 1000 == 0:
                 recorder.store_session_batch(1000)
 
             if conf.dagger_training_enabled and data_count % conf.dagger_epoch_size == 0 and dagger_iteration < conf.dagger_epochs_count:
