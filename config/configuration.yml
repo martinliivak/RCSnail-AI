@@ -12,12 +12,12 @@ frame_height: 40
 frame_width: 60
 # Procedural flags
 # memory length and interval
-m_length: 1
+m_length: 4
 m_interval: 1
 
 # modes: full_model, shared, full_expert
-prediction_mode: full_expert
+prediction_mode: full_model
 
-dagger_training_enabled: true
+dagger_training_enabled: false
 dagger_epoch_size: 3000
 dagger_epochs_count: 6

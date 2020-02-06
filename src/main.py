@@ -27,7 +27,10 @@ async def main_dagger(context: Context):
     controls_queue = context.socket(zmq.PUB)
 
     try:
-        model = ModelWrapper(conf, model_file='model_n1_m1_1')
+        # TODO some better way to handle this
+        model_file = None
+        model_file = 'model_n{}_m{}_1'.format(conf.m_length, conf.m_interval)
+        model = ModelWrapper(conf, model_file=model_file)
         mem_slice_frames = []
         mem_slice_numerics = []
         data_count = 0
@@ -38,8 +41,10 @@ async def main_dagger(context: Context):
 
         while True:
             frame, data = await recv_array_with_json(queue=data_queue)
+            # TODO handle case if expert data is not available, i.e full model control
             telemetry, expert_action = data
             if frame is None or telemetry is None or expert_action is None:
+                print("None datas")
                 continue
 
             recorder.record_full(frame, telemetry, expert_action)
@@ -61,6 +66,9 @@ async def main_dagger(context: Context):
             try:
                 if conf.prediction_mode == 'full_model':
                     prediction = model.predict(mem_frame, mem_telemetry).to_dict()
+                    # TODO when more aspects are predicted remove these
+                    prediction['d_gear'] = mem_expert_action[0]
+                    prediction['d_throttle'] = mem_expert_action[2]
                 elif conf.prediction_mode == 'shared':
                     expert_probability = np.exp(-0.15 * dagger_iteration)
                     model_probability = np.random.random()

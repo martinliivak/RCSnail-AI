@@ -60,7 +60,7 @@ class ModelWrapper:
 
 def updates_from_prediction(prediction):
     prediction_values = prediction.tolist()[0]
-    # print("preds: {}".format(prediction_values))
+    # print("preds: {}".format(prediction_values)
 
     # predicted_gear = round_predicted_gear(prediction_values[0])
     # predicted_steering = np.clip(prediction_values[1], -0.1, 0.1)
