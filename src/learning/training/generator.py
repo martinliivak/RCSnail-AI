@@ -34,8 +34,8 @@ class Generator:
         self.separate_files = separate_files
         self.column_mode = column_mode
 
-        indexes = self.__apply_upsampling()
-        self.train_indexes, self.test_indexes = train_test_split(indexes)
+        self.indexes = self.__apply_upsampling()
+        self.train_indexes, self.test_indexes = train_test_split(self.indexes)
 
         self.train_batch_count = len(self.train_indexes) // self.batch_size
         self.test_batch_count = len(self.test_indexes) // self.batch_size
@@ -52,6 +52,14 @@ class Generator:
 
     def __count_instances(self):
         return len([fn for fn in os.listdir(self.path) if fn.startswith('frame_')])
+
+    def get_shapes(self):
+        frame, numeric, diff = self.__load_single_pair(0)
+
+        if not hasattr(diff, '__len__'):
+            return frame.shape, numeric.shape, 1
+
+        return frame.shape, numeric.shape, diff.shape
 
     def generate(self, data='train'):
         if data == 'train':
@@ -73,9 +81,12 @@ class Generator:
 
                 yield (x_frame, x_numeric), y
 
-    def get_shapes(self):
-        frame, numeric, diff = self.__load_batch([0])
-        return frame.shape[1:], numeric.shape[1:], diff.shape[0]
+    def generate_single(self):
+        while True:
+            index = np.random.randint(0, len(self.indexes))
+
+            x_frame, x_numeric, y = self.__load_single_pair(index)
+            yield (x_frame, x_numeric), y
 
     def __load_batch(self, batch_indexes):
         frames = []
@@ -83,28 +94,33 @@ class Generator:
         diffs = []
 
         for i in batch_indexes:
-            frame = np.load(self.path + GenFiles.frame.format(self.memory_string, i), allow_pickle=True)
-
-            if self.column_mode == 'steer':
-                if self.separate_files:
-                    numeric = np.load(self.path + GenFiles.steer.format(self.memory_string, i), allow_pickle=True)
-                    diff = np.load(self.path + GenFiles.steer_diff.format(self.memory_string, i), allow_pickle=True)
-                else:
-                    numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, i), allow_pickle=True)
-                    diff = np.load(self.path + GenFiles.diff.format(self.memory_string, i), allow_pickle=True)
-
-                # steering and throttle
-                numeric = self.__memory.columns_from_memorized(numeric, (1, 2))
-                # steering
-                diff = diff[1]
-            elif self.column_mode == 'all':
-                numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, i), allow_pickle=True)
-                diff = np.load(self.path + GenFiles.diff.format(self.memory_string, i), allow_pickle=True)
-            else:
-                raise ValueError
+            frame, numeric, diff = self.__load_single_pair(i)
 
             frames.append(frame)
             numerics.append(numeric)
             diffs.append(diff)
 
         return np.array(frames), np.array(numerics), np.array(diffs)
+
+    def __load_single_pair(self, index):
+        frame = np.load(self.path + GenFiles.frame.format(self.memory_string, index), allow_pickle=True)
+
+        if self.column_mode == 'steer':
+            if self.separate_files:
+                numeric = np.load(self.path + GenFiles.steer.format(self.memory_string, index), allow_pickle=True)
+                diff = np.load(self.path + GenFiles.steer_diff.format(self.memory_string, index), allow_pickle=True)
+            else:
+                numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, index), allow_pickle=True)
+                diff = np.load(self.path + GenFiles.diff.format(self.memory_string, index), allow_pickle=True)
+
+            # steering and throttle
+            numeric = self.__memory.columns_from_memorized(numeric, (1, 2))
+            # steering
+            diff = diff[1]
+        elif self.column_mode == 'all':
+            numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, index), allow_pickle=True)
+            diff = np.load(self.path + GenFiles.diff.format(self.memory_string, index), allow_pickle=True)
+        else:
+            raise ValueError
+
+        return frame, numeric, diff
