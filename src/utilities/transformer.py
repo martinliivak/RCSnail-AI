@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import cv2
-from sklearn.model_selection import train_test_split
 
 from src.learning.training.collector import Collector
 from src.utilities.memory_maker import MemoryMaker

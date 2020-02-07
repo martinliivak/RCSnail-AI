@@ -17,8 +17,8 @@ m_interval: 1
 
 # modes: full_model, shared, full_expert
 control_mode: full_expert
-# modes: supervisor, steer
-prediction_mode: steer
+# modes: supervisor, steer, steer_diff
+prediction_mode: supervisor
 
 dagger_training_enabled: false
 dagger_epoch_size: 3000
