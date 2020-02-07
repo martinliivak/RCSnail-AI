@@ -28,8 +28,8 @@ async def main_dagger(context: Context):
 
     try:
         # TODO some better way to handle this
-        model_file = None
         model_file = 'model_n{}_m{}_1'.format(conf.m_length, conf.m_interval)
+        model_file = None
         model = ModelWrapper(conf, model_file=model_file)
         mem_slice_frames = []
         mem_slice_numerics = []
