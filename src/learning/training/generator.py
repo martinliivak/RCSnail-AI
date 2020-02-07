@@ -73,6 +73,10 @@ class Generator:
 
                 yield (x_frame, x_numeric), y
 
+    def get_shapes(self):
+        frame, numeric, diff = self.__load_batch([0])
+        return frame.shape[1:], numeric.shape[1:], diff.shape[0]
+
     def __load_batch(self, batch_indexes):
         frames = []
         numerics = []
