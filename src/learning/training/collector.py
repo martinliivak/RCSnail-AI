@@ -35,7 +35,7 @@ class Collector:
             self.__mapping.d_steering
         ]
 
-    def target_steering_column(self):
+    def steering_column(self):
         return [
             self.__mapping.steering
         ]

@@ -34,8 +34,8 @@ class Generator:
         self.separate_files = separate_files
         self.column_mode = column_mode
 
-        self.indexes = self.__apply_upsampling()
-        self.train_indexes, self.test_indexes = train_test_split(self.indexes)
+        indexes = self.__apply_upsampling()
+        self.train_indexes, self.test_indexes = train_test_split(indexes, test_size=0.15, shuffle=True)
 
         self.train_batch_count = len(self.train_indexes) // self.batch_size
         self.test_batch_count = len(self.test_indexes) // self.batch_size
@@ -81,9 +81,16 @@ class Generator:
 
                 yield (x_frame, x_numeric), y
 
-    def generate_single(self):
+    def generate_single_train(self):
         while True:
-            index = np.random.randint(0, len(self.indexes))
+            index = np.random.choice(self.train_indexes, 1)[0]
+
+            x_frame, x_numeric, y = self.__load_single_pair(index)
+            yield (x_frame, x_numeric), y
+
+    def generate_single_test(self):
+        while True:
+            index = np.random.randint(self.test_indexes, 1)[0]
 
             x_frame, x_numeric, y = self.__load_single_pair(index)
             yield (x_frame, x_numeric), y
@@ -113,8 +120,8 @@ class Generator:
                 numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, index), allow_pickle=True)
                 diff = np.load(self.path + GenFiles.diff.format(self.memory_string, index), allow_pickle=True)
 
-            # steering and throttle
-            numeric = self.__memory.columns_from_memorized(numeric, (1, 2))
+            # steering
+            numeric = self.__memory.columns_from_memorized(numeric, (1))
             # steering
             diff = diff[1]
         elif self.column_mode == 'all':
