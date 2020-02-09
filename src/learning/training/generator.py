@@ -69,7 +69,7 @@ class Generator:
             indexes = self.test_indexes
             batch_count = self.test_batch_count
         else:
-            raise ValueError
+            raise ValueError('Data type is not train or test!')
 
         while True:
             if self.shuffle:
@@ -128,6 +128,6 @@ class Generator:
             numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, index), allow_pickle=True)
             diff = np.load(self.path + GenFiles.diff.format(self.memory_string, index), allow_pickle=True)
         else:
-            raise ValueError
+            raise ValueError('Misconfigured generator column mode!')
 
         return frame, numeric, diff

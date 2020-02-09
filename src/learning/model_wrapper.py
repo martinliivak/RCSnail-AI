@@ -9,7 +9,7 @@ from utilities.memory_maker import MemoryMaker
 
 
 class ModelWrapper:
-    def __init__(self, config, model_file=None, frames_shape=(40, 60, 3), numeric_shape=(4,), output_shape=4):
+    def __init__(self, config, frames_shape=(40, 60, 3), numeric_shape=(4,), output_shape=4):
         self.__path_to_models = config.path_to_models
         self.__memory = MemoryMaker(config)
         self.__prediction_mode = config.prediction_mode
@@ -19,9 +19,13 @@ class ModelWrapper:
         self.__numeric_shape = (2 * config.m_length,)
         self.__output_shape = 1
 
-        # TODO split model up
-        if model_file is not None:
-            self.model = self.__load_model(model_file)
+        # TODO split models to steering, throttle & gear models
+        if config.pretrained_start:
+            model_name = 'model_n{}_m{}_2.h5'.format(config.m_length, config.m_interval)
+            if os.path.isfile(self.__path_to_models + model_name):
+                self.model = self.__load_model(model_name)
+            else:
+                raise ValueError('Model not found!')
         else:
             self.model = self.__create_new_model()
 
@@ -36,7 +40,7 @@ class ModelWrapper:
     def __load_model(self, model_filename: str):
         from tensorflow.keras.models import load_model
         print("Loaded " + model_filename)
-        return load_model(self.__path_to_models + model_filename + ".h5")
+        return load_model(self.__path_to_models + model_filename)
 
     def save_model(self, model_filename: str):
         self.model.save(self.__path_to_models + model_filename + ".h5")

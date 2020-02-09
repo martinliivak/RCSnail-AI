@@ -27,10 +27,7 @@ async def main_dagger(context: Context):
     controls_queue = context.socket(zmq.PUB)
 
     try:
-        # TODO some better way to handle this
-        model_file = 'model_n{}_m{}_2'.format(conf.m_length, conf.m_interval)
-        model_file = None
-        model = ModelWrapper(conf, model_file=model_file)
+        model = ModelWrapper(conf)
         mem_slice_frames = []
         mem_slice_numerics = []
         data_count = 0
@@ -80,7 +77,7 @@ async def main_dagger(context: Context):
                 elif conf.control_mode == 'full_expert':
                     prediction = expert_action
                 else:
-                    raise ValueError
+                    raise ValueError('Misconfigured control mode!')
 
                 controls_queue.send_json(prediction)
                 #recorder.record_post_mortem(telemetry, expert_actions, prediction)
