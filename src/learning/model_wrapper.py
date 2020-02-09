@@ -53,7 +53,7 @@ class ModelWrapper:
             print("Generator training exception: {}".format(ex))
 
     def predict(self, mem_frame, mem_telemetry):
-        # gear, steering, throttle, braking
+        # steering, throttle
         mem_steering = self.__memory.columns_from_memorized(mem_telemetry, columns=(1, 2))
 
         predictions = self.model.predict([mem_frame[np.newaxis, :], mem_steering[np.newaxis, :]])
@@ -61,14 +61,7 @@ class ModelWrapper:
 
     def updates_from_prediction(self, prediction):
         prediction_values = prediction.tolist()[0]
-        # print("preds: {}".format(prediction_values)
 
-        # predicted_gear = round_predicted_gear(prediction_values[0])
-        # predicted_steering = np.clip(prediction_values[1], -0.1, 0.1)
-        # predicted_throttle = np.clip(prediction_values[2], 0, 0.1)
-        # predicted_braking = round_predicted_braking(prediction_values[3])
-
-        # return CarControlUpdates(predicted_gear, predicted_steering, predicted_throttle, predicted_braking)
         return CarControlUpdates(1, prediction_values[0], 0.0, 0.0, self.__prediction_mode)
 
 
