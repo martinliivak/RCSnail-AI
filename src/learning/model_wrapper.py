@@ -14,9 +14,10 @@ class ModelWrapper:
         self.__memory = MemoryMaker(config)
         self.__prediction_mode = config.prediction_mode
 
-        # TODO try to make this dynamic based on actual data?
+        # TODO try to make this dynamic based on actual data... if possible?
+        # TODO some shapes have to be per model
         self.__frames_shape = (40, 60, 3 * config.m_length)
-        self.__numeric_shape = (2 * config.m_length,)
+        self.__numeric_shape = (1 * config.m_length,)
         self.__output_shape = 1
 
         # TODO split models to steering, throttle & gear models
@@ -58,14 +59,14 @@ class ModelWrapper:
 
     def predict(self, mem_frame, mem_telemetry):
         # steering, throttle
-        mem_steering = self.__memory.columns_from_memorized(mem_telemetry, columns=(1, 2))
-
+        mem_steering = self.__memory.columns_from_memorized(mem_telemetry, columns=(1,))
         predictions = self.model.predict([mem_frame[np.newaxis, :], mem_steering[np.newaxis, :]])
         return self.updates_from_prediction(predictions)
 
     def updates_from_prediction(self, prediction):
         prediction_values = prediction.tolist()[0]
 
+        # TODO clip values into allowed limits here
         return CarControlUpdates(1, prediction_values[0], 0.0, 0.0, self.__prediction_mode)
 
 
