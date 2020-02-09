@@ -65,21 +65,6 @@ class ModelWrapper:
         return CarControlUpdates(1, prediction_values[0], 0.0, 0.0, self.__prediction_mode)
 
 
-def round_predicted_gear(predicted_gear):
-    if predicted_gear < 0.3:
-        return 0
-    elif 0.3 <= predicted_gear < 1.6:
-        return 1
-    else:
-        return 2
-
-
-def round_predicted_braking(predicted_braking):
-    if np.abs(predicted_braking) < 0.01:
-        return 0.0
-    return predicted_braking
-
-
 def get_model_file_name(path_to_models: str):
     date = datetime.datetime.today().strftime("%Y_%m_%d")
     models_from_same_date = list(filter(lambda file: date in file, os.listdir(path_to_models)))

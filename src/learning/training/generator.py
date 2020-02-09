@@ -120,8 +120,8 @@ class Generator:
                 numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, index), allow_pickle=True)
                 diff = np.load(self.path + GenFiles.diff.format(self.memory_string, index), allow_pickle=True)
 
-            # steering
-            numeric = self.__memory.columns_from_memorized(numeric, (1))
+            # steering, throttle
+            numeric = self.__memory.columns_from_memorized(numeric, (1, 2))
             # steering
             diff = diff[1]
         elif self.column_mode == 'all':
