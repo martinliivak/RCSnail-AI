@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import cv2
+from PIL import Image
 
 from src.learning.training.collector import Collector
 from src.utilities.memory_maker import MemoryMaker
@@ -16,18 +17,20 @@ class Transformer:
         resized_frames = np.zeros((len(frames_list), self.resolution[1], self.resolution[0], 3), dtype=np.float32)
         for i in range(0, resized_frames.shape[0]):
             resized_frames[i] = cv2.resize(frames_list[i], dsize=self.resolution, interpolation=cv2.INTER_CUBIC).astype(np.float32)
-        return resized_frames / 255
+        resized_frames /= 255
+        return resized_frames
 
     def resize_and_normalize_video_shifted(self, frames_list):
         resized_frames = np.zeros((len(frames_list) - 1, self.resolution[1], self.resolution[0], 3), dtype=np.float32)
         for i in range(0, resized_frames.shape[0]):
             resized_frames[i] = cv2.resize(frames_list[i], dsize=self.resolution, interpolation=cv2.INTER_CUBIC).astype(np.float32)
-        return resized_frames / 255
+        resized_frames /= 255
+        return resized_frames
 
     def session_frame(self, frame, memory_list):
         resized = cv2.resize(frame, dsize=self.resolution, interpolation=cv2.INTER_CUBIC).astype(np.float32)
-        normed = resized / 255
-        return self.__memory.memory_creator(normed, memory_list, axis=2)
+        resized /= 255
+        return self.__memory.memory_creator(resized, memory_list, axis=2)
 
     def session_numeric_input(self, telemetry, memory_list):
         telemetry_df = pd.DataFrame.from_records([telemetry], columns=telemetry.keys())[telemetry.keys()]

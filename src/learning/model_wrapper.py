@@ -22,7 +22,7 @@ class ModelWrapper:
 
         # TODO split models to steering, throttle & gear models
         if config.pretrained_start:
-            model_name = 'model_n{}_m{}_2.h5'.format(config.m_length, config.m_interval)
+            model_name = 'model_n{}_m{}_{}.h5'.format(config.m_length, config.m_interval, config.model_num)
             if os.path.isfile(self.__path_to_models + model_name):
                 self.model = self.__load_model(model_name)
             else:
@@ -61,6 +61,7 @@ class ModelWrapper:
         # steering, throttle
         mem_steering = self.__memory.columns_from_memorized(mem_telemetry, columns=(1,))
         predictions = self.model.predict([mem_frame[np.newaxis, :], mem_steering[np.newaxis, :]])
+
         return self.updates_from_prediction(predictions)
 
     def updates_from_prediction(self, prediction):
