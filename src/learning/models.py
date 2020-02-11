@@ -80,9 +80,9 @@ def create_mlp_2(input_shape=(4,)):
     from tensorflow.keras.models import Model
 
     inputs = Input(shape=input_shape)
-    dense_1 = Dense(20, activation="tanh", kernel_regularizer=l2(0.001))(inputs)
+    dense_1 = Dense(20, activation="relu", kernel_regularizer=l2(0.001))(inputs)
     dropout_1 = Dropout(0.5)(dense_1)
-    dense_2 = Dense(5, activation="tanh", kernel_regularizer=l2(0.001))(dropout_1)
+    dense_2 = Dense(10, activation="relu", kernel_regularizer=l2(0.001))(dropout_1)
 
     return Model(inputs, dense_2)
 
@@ -119,8 +119,8 @@ def create_multi_model_2(mlp, cnn, output_shape=1):
 
     combined_input = concatenate([cnn.output, mlp.output])
 
-    dense_1 = Dense(20, activation="tanh", kernel_regularizer=l2(0.001))(combined_input)
-    dense_2 = Dense(10, activation="tanh", kernel_regularizer=l2(0.001))(dense_1)
+    dense_1 = Dense(20, activation="relu", kernel_regularizer=l2(0.001))(combined_input)
+    dense_2 = Dense(10, activation="relu", kernel_regularizer=l2(0.001))(dense_1)
     out_dense = Dense(output_shape, activation="linear")(dense_2)
 
     model = Model(inputs=[cnn.input, mlp.input], outputs=out_dense)
