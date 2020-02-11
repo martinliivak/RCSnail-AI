@@ -13,9 +13,9 @@ def create_multi_model(mlp, cnn, output_shape=4):
     combined_input = concatenate([cnn.output, mlp.output])
 
     dense_1 = Dense(12, activation="tanh", kernel_regularizer=l2(0.001))(combined_input)
-    dropout_1 = Dropout(0.3)(dense_1)
+    dropout_1 = Dropout(0.5)(dense_1)
     dense_2 = Dense(8, activation="tanh", kernel_regularizer=l2(0.001))(dropout_1)
-    dropout_2 = Dropout(0.3)(dense_2)
+    dropout_2 = Dropout(0.5)(dense_2)
     out_dense = Dense(output_shape, activation="linear")(dropout_2)
 
     model = Model(inputs=[cnn.input, mlp.input], outputs=out_dense)
@@ -37,13 +37,13 @@ def create_mlp(input_shape=(4,)):
     """More-less copied from https://www.pyimagesearch.com/2019/02/04/keras-multiple-inputs-and-mixed-data/"""
     inputs = Input(shape=input_shape)
     dense_1 = Dense(8, activation="tanh", kernel_regularizer=l2(0.001))(inputs)
-    dropout_1 = Dropout(0.3)(dense_1)
+    dropout_1 = Dropout(0.5)(dense_1)
     dense_2 = Dense(6, activation="tanh", kernel_regularizer=l2(0.001))(dropout_1)
 
     return Model(inputs, dense_2)
 
 
-def create_cnn(input_shape=(40, 60, 3), filters=(16, 32, 64), regress=False):
+def create_cnn(input_shape=(40, 60, 3), filters=(16, 32, 64), kernel=(3, 3), regress=False):
     from tensorflow.keras.layers import BatchNormalization
     from tensorflow.keras.layers import Conv2D
     from tensorflow.keras.layers import MaxPooling2D
@@ -59,7 +59,7 @@ def create_cnn(input_shape=(40, 60, 3), filters=(16, 32, 64), regress=False):
 
     layer_x = inputs
     for (layer, conv_filter) in enumerate(filters):
-        conv_2d = Conv2D(conv_filter, (3, 3), activation="tanh", padding="same")(layer_x)
+        conv_2d = Conv2D(conv_filter, kernel, activation="tanh", padding="same")(layer_x)
         batch_norm = BatchNormalization(axis=batch_norm_axis)(conv_2d)
         layer_x = MaxPooling2D(pool_size=(2, 2))(batch_norm)
 
@@ -70,3 +70,62 @@ def create_cnn(input_shape=(40, 60, 3), filters=(16, 32, 64), regress=False):
         model = Dense(6, activation="linear")(model)
 
     return Model(inputs, model)
+
+
+def create_mlp_2(input_shape=(4,)):
+    from tensorflow.keras.layers import Input
+    from tensorflow.keras.layers import Dense
+    from tensorflow.keras.layers import Dropout
+    from tensorflow.keras.regularizers import l2
+    from tensorflow.keras.models import Model
+
+    inputs = Input(shape=input_shape)
+    dense_1 = Dense(20, activation="tanh", kernel_regularizer=l2(0.001))(inputs)
+    dropout_1 = Dropout(0.5)(dense_1)
+    dense_2 = Dense(5, activation="tanh", kernel_regularizer=l2(0.001))(dropout_1)
+
+    return Model(inputs, dense_2)
+
+
+def create_cnn_2(input_shape=(40, 60, 3)):
+    from tensorflow.keras.layers import Convolution2D
+    from tensorflow.keras.layers import Dense
+    from tensorflow.keras.layers import Flatten
+    from tensorflow.keras.layers import Input
+    from tensorflow.keras.models import Model
+
+    """ Architecture from https://github.com/tanelp/self-driving-convnet/blob/master/train.py"""
+    inputs = Input(shape=input_shape)
+    conv_1 = Convolution2D(24, kernel_size=(5, 5), strides=(2, 2), padding="same", activation="relu")(inputs)
+    conv_2 = Convolution2D(36, kernel_size=(5, 5), strides=(2, 2), padding="same", activation="relu")(conv_1)
+    conv_3 = Convolution2D(48, kernel_size=(5, 5), strides=(2, 2), padding="same", activation="relu")(conv_2)
+    conv_4 = Convolution2D(64, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu")(conv_3)
+    conv_5 = Convolution2D(64, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu")(conv_4)
+    conv_6 = Convolution2D(64, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu")(conv_5)
+    flatten = Flatten()(conv_6)
+    dense_1 = Dense(100, activation="relu")(flatten)
+    dense_2 = Dense(50, activation="relu")(dense_1)
+    dense_3 = Dense(10, activation="relu")(dense_2)
+
+    return Model(inputs, dense_3)
+
+
+def create_multi_model_2(mlp, cnn, output_shape=1):
+    from tensorflow.keras.layers import concatenate
+    from tensorflow.keras.layers import Dense
+    from tensorflow.keras.regularizers import l2
+    from tensorflow.keras.models import Model
+    from tensorflow.keras.optimizers import Adam
+
+    combined_input = concatenate([cnn.output, mlp.output])
+
+    dense_1 = Dense(20, activation="tanh", kernel_regularizer=l2(0.001))(combined_input)
+    dense_2 = Dense(10, activation="tanh", kernel_regularizer=l2(0.001))(dense_1)
+    out_dense = Dense(output_shape, activation="linear")(dense_2)
+
+    model = Model(inputs=[cnn.input, mlp.input], outputs=out_dense)
+    optimizer = Adam(lr=3e-4)
+
+    model.compile(loss="mse", optimizer=optimizer)
+
+    return model
