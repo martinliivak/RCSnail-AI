@@ -80,15 +80,17 @@ def create_mlp_2(input_shape=(4,)):
     from tensorflow.keras.models import Model
 
     inputs = Input(shape=input_shape)
-    dense_1 = Dense(20, activation="relu", kernel_regularizer=l2(0.001))(inputs)
-    dropout_1 = Dropout(0.5)(dense_1)
-    dense_2 = Dense(10, activation="relu", kernel_regularizer=l2(0.001))(dropout_1)
+    dropout_1 = Dropout(0.5)(inputs)
+    dense_1 = Dense(20, activation="relu", kernel_regularizer=l2(0.001))(dropout_1)
+    dropout_2 = Dropout(0.5)(dense_1)
+    dense_2 = Dense(10, activation="relu", kernel_regularizer=l2(0.001))(dropout_2)
 
     return Model(inputs, dense_2)
 
 
 def create_cnn_2(input_shape=(40, 60, 3)):
     from tensorflow.keras.layers import Convolution2D
+    from tensorflow.keras.regularizers import l2
     from tensorflow.keras.layers import Dense
     from tensorflow.keras.layers import Flatten
     from tensorflow.keras.layers import Input
@@ -96,18 +98,50 @@ def create_cnn_2(input_shape=(40, 60, 3)):
 
     """ Architecture from https://github.com/tanelp/self-driving-convnet/blob/master/train.py"""
     inputs = Input(shape=input_shape)
-    conv_1 = Convolution2D(24, kernel_size=(5, 5), strides=(2, 2), padding="same", activation="relu")(inputs)
-    conv_2 = Convolution2D(36, kernel_size=(5, 5), strides=(2, 2), padding="same", activation="relu")(conv_1)
-    conv_3 = Convolution2D(48, kernel_size=(5, 5), strides=(2, 2), padding="same", activation="relu")(conv_2)
-    conv_4 = Convolution2D(64, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu")(conv_3)
-    conv_5 = Convolution2D(64, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu")(conv_4)
-    conv_6 = Convolution2D(64, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu")(conv_5)
+    conv_1 = Convolution2D(24, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(inputs)
+    conv_2 = Convolution2D(36, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_1)
+    conv_3 = Convolution2D(48, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_2)
+    conv_4 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_3)
+    conv_5 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_4)
+    conv_6 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_5)
     flatten = Flatten()(conv_6)
-    dense_1 = Dense(100, activation="relu")(flatten)
-    dense_2 = Dense(50, activation="relu")(dense_1)
-    dense_3 = Dense(10, activation="relu")(dense_2)
+    dense_1 = Dense(1164, kernel_regularizer=l2(0.0005), activation="relu")(flatten)
+    dense_2 = Dense(100, kernel_regularizer=l2(0.0005), activation="relu")(dense_1)
+    dense_3 = Dense(50, kernel_regularizer=l2(0.0005), activation="relu")(dense_2)
+    dense_4 = Dense(10, kernel_regularizer=l2(0.0005), activation="relu")(dense_3)
 
-    return Model(inputs, dense_3)
+    return Model(inputs, dense_4)
+
+
+def create_cnn_alone(input_shape=(40, 60, 3), output_shape=1):
+    from tensorflow.keras.layers import Convolution2D
+    from tensorflow.keras.regularizers import l2
+    from tensorflow.keras.layers import Dense
+    from tensorflow.keras.layers import Flatten
+    from tensorflow.keras.layers import Input
+    from tensorflow.keras.models import Model
+    from tensorflow.keras.optimizers import Adam
+
+    """ Architecture from nvidia paper mentioned in https://github.com/tanelp/self-driving-convnet/blob/master/train.py"""
+    inputs = Input(shape=input_shape)
+    conv_1 = Convolution2D(24, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(inputs)
+    conv_2 = Convolution2D(36, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_1)
+    conv_3 = Convolution2D(48, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_2)
+    conv_4 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_3)
+    conv_5 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_4)
+    conv_6 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_5)
+    flatten = Flatten()(conv_6)
+    dense_1 = Dense(1164, kernel_regularizer=l2(0.0005), activation="relu")(flatten)
+    dense_2 = Dense(100, kernel_regularizer=l2(0.0005), activation="relu")(dense_1)
+    dense_3 = Dense(50, kernel_regularizer=l2(0.0005), activation="relu")(dense_2)
+    dense_4 = Dense(10, kernel_regularizer=l2(0.0005), activation="relu")(dense_3)
+    out_dense = Dense(output_shape, activation="linear")(dense_4)
+
+    model = Model(inputs=inputs, outputs=out_dense)
+    optimizer = Adam(lr=3e-4)
+    model.compile(loss="mae", optimizer=optimizer)
+
+    return model
 
 
 def create_multi_model_2(mlp, cnn, output_shape=1):
@@ -125,7 +159,6 @@ def create_multi_model_2(mlp, cnn, output_shape=1):
 
     model = Model(inputs=[cnn.input, mlp.input], outputs=out_dense)
     optimizer = Adam(lr=3e-4)
-
-    model.compile(loss="mse", optimizer=optimizer)
+    model.compile(loss="mae", optimizer=optimizer)
 
     return model
