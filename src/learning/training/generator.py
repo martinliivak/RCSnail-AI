@@ -101,18 +101,18 @@ class Generator:
         while True:
             np.random.shuffle(indexes)
 
-            for index in range(indexes):
+            for index in indexes:
                 x_frame, x_numeric, y = self.__load_single_pair(index)
-                yield convert_to_tensor(x_frame, dtype=np.float32), convert_to_tensor(y, dtype=np.float32)
+                yield x_frame, y
 
     def generate_single_test(self):
         batch_count, indexes = self.__evaluate_indexes('test')
         while True:
             np.random.shuffle(indexes)
 
-            for index in range(indexes):
+            for index in indexes:
                 x_frame, x_numeric, y = self.__load_single_pair(index)
-                yield convert_to_tensor(x_frame, dtype=np.float32), convert_to_tensor(y, dtype=np.float32)
+                yield x_frame, y
 
     def __load_batch(self, batch_indexes):
         frames = []

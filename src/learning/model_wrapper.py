@@ -49,6 +49,7 @@ class ModelWrapper:
 
     def fit(self, generator, epochs=1, verbose=1):
         try:
+            # TODO might need separate generate (with_numeric) method support
             self.model.fit(generator.generate(data='train'),
                            steps_per_epoch=generator.train_batch_count,
                            validation_data=generator.generate(data='test'),
@@ -58,16 +59,17 @@ class ModelWrapper:
             print("Generator training exception: {}".format(ex))
 
     def predict(self, mem_frame, mem_telemetry):
-        # steering, throttle
+        # prediction from frame and steering
         mem_steering = self.__memory.columns_from_memorized(mem_telemetry, columns=(1,))
         predictions = self.model.predict([mem_frame[np.newaxis, :], mem_steering[np.newaxis, :]])
+        # prediction from frame
+        #predictions = self.model.predict(mem_frame[np.newaxis, :])
 
         return self.updates_from_prediction(predictions)
 
     def updates_from_prediction(self, prediction):
         prediction_values = prediction.tolist()[0]
 
-        # TODO clip values into allowed limits here
         return CarControlUpdates(1, prediction_values[0], 0.0, 0.0, self.__prediction_mode)
 
 
