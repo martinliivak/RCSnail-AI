@@ -2,6 +2,14 @@
 # regularization from https://machinelearningmastery.com/how-to-reduce-overfitting-in-deep-learning-with-weight-regularization/
 
 
+def time_consistent_loss(y_true, y_pred, coef=0.5):
+    import tensorflow.keras.backend as K
+    print(y_true.shape)
+    print(y_pred.shape)
+
+    return K.mean(K.square(y_pred - y_true), axis=-1) + 0.5 * K.mean(K.square(y_pred[1:] - y_pred[:-1]), axis=-1)
+
+
 def create_multi_model(mlp, cnn, output_shape=4):
     from tensorflow.keras.layers import concatenate
     from tensorflow.keras.layers import Dense
@@ -9,6 +17,7 @@ def create_multi_model(mlp, cnn, output_shape=4):
     from tensorflow.keras.regularizers import l2
     from tensorflow.keras.models import Model
     from tensorflow.keras.optimizers import Adam
+    from tensorflow.keras.losses import mean_squared_error, mean_absolute_error
 
     combined_input = concatenate([cnn.output, mlp.output])
 
@@ -22,7 +31,7 @@ def create_multi_model(mlp, cnn, output_shape=4):
     optimizer = Adam(lr=3e-4)
 
     # MAE usage from https://arxiv.org/abs/1809.04843
-    model.compile(loss="mean_absolute_error", optimizer=optimizer)
+    model.compile(loss=mean_squared_error, optimizer=optimizer)
 
     return model
 
@@ -98,17 +107,17 @@ def create_cnn_2(input_shape=(40, 60, 3)):
 
     """ Architecture from https://github.com/tanelp/self-driving-convnet/blob/master/train.py"""
     inputs = Input(shape=input_shape)
-    conv_1 = Convolution2D(24, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(inputs)
-    conv_2 = Convolution2D(36, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_1)
-    conv_3 = Convolution2D(48, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_2)
-    conv_4 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_3)
-    conv_5 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_4)
-    conv_6 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_5)
+    conv_1 = Convolution2D(24, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="elu")(inputs)
+    conv_2 = Convolution2D(36, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="elu")(conv_1)
+    conv_3 = Convolution2D(48, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="elu")(conv_2)
+    conv_4 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="elu")(conv_3)
+    conv_5 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="elu")(conv_4)
+    conv_6 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="elu")(conv_5)
     flatten = Flatten()(conv_6)
-    dense_1 = Dense(1164, kernel_regularizer=l2(0.0005), activation="relu")(flatten)
-    dense_2 = Dense(100, kernel_regularizer=l2(0.0005), activation="relu")(dense_1)
-    dense_3 = Dense(50, kernel_regularizer=l2(0.0005), activation="relu")(dense_2)
-    dense_4 = Dense(10, kernel_regularizer=l2(0.0005), activation="relu")(dense_3)
+    dense_1 = Dense(1164, kernel_regularizer=l2(0.0005), activation="elu")(flatten)
+    dense_2 = Dense(100, kernel_regularizer=l2(0.0005), activation="elu")(dense_1)
+    dense_3 = Dense(50, kernel_regularizer=l2(0.0005), activation="elu")(dense_2)
+    dense_4 = Dense(10, kernel_regularizer=l2(0.0005), activation="elu")(dense_3)
 
     return Model(inputs, dense_4)
 
@@ -121,25 +130,26 @@ def create_cnn_alone(input_shape=(40, 60, 3), output_shape=1):
     from tensorflow.keras.layers import Input
     from tensorflow.keras.models import Model
     from tensorflow.keras.optimizers import Adam
+    from tensorflow.keras.losses import mean_squared_error, mean_absolute_error
 
     """ Architecture from nvidia paper mentioned in https://github.com/tanelp/self-driving-convnet/blob/master/train.py"""
     inputs = Input(shape=input_shape)
-    conv_1 = Convolution2D(24, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(inputs)
-    conv_2 = Convolution2D(36, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_1)
-    conv_3 = Convolution2D(48, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_2)
-    conv_4 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_3)
-    conv_5 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_4)
-    conv_6 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="relu")(conv_5)
+    conv_1 = Convolution2D(24, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="elu")(inputs)
+    conv_2 = Convolution2D(36, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="elu")(conv_1)
+    conv_3 = Convolution2D(48, kernel_size=(5, 5), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="elu")(conv_2)
+    conv_4 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="elu")(conv_3)
+    conv_5 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="elu")(conv_4)
+    conv_6 = Convolution2D(64, kernel_size=(3, 3), kernel_regularizer=l2(0.0005), strides=(2, 2), padding="same", activation="elu")(conv_5)
     flatten = Flatten()(conv_6)
-    dense_1 = Dense(1164, kernel_regularizer=l2(0.0005), activation="relu")(flatten)
-    dense_2 = Dense(100, kernel_regularizer=l2(0.0005), activation="relu")(dense_1)
-    dense_3 = Dense(50, kernel_regularizer=l2(0.0005), activation="relu")(dense_2)
-    dense_4 = Dense(10, kernel_regularizer=l2(0.0005), activation="relu")(dense_3)
+    dense_1 = Dense(1164, kernel_regularizer=l2(0.0005), activation="elu")(flatten)
+    dense_2 = Dense(100, kernel_regularizer=l2(0.0005), activation="elu")(dense_1)
+    dense_3 = Dense(50, kernel_regularizer=l2(0.0005), activation="elu")(dense_2)
+    dense_4 = Dense(10, kernel_regularizer=l2(0.0005), activation="elu")(dense_3)
     out_dense = Dense(output_shape, activation="linear")(dense_4)
 
     model = Model(inputs=inputs, outputs=out_dense)
     optimizer = Adam(lr=3e-4)
-    model.compile(loss="mae", optimizer=optimizer)
+    model.compile(loss=mean_absolute_error, optimizer=optimizer)
 
     return model
 
@@ -150,15 +160,37 @@ def create_multi_model_2(mlp, cnn, output_shape=1):
     from tensorflow.keras.regularizers import l2
     from tensorflow.keras.models import Model
     from tensorflow.keras.optimizers import Adam
+    from tensorflow.keras.losses import mean_squared_error, mean_absolute_error
 
     combined_input = concatenate([cnn.output, mlp.output])
 
-    dense_1 = Dense(20, activation="relu", kernel_regularizer=l2(0.001))(combined_input)
-    dense_2 = Dense(10, activation="relu", kernel_regularizer=l2(0.001))(dense_1)
+    dense_1 = Dense(20, activation="elu", kernel_regularizer=l2(0.0005))(combined_input)
+    dense_2 = Dense(10, activation="elu", kernel_regularizer=l2(0.0005))(dense_1)
     out_dense = Dense(output_shape, activation="linear")(dense_2)
 
     model = Model(inputs=[cnn.input, mlp.input], outputs=out_dense)
     optimizer = Adam(lr=3e-4)
-    model.compile(loss="mae", optimizer=optimizer)
+    model.compile(loss=mean_absolute_error, optimizer=optimizer)
+
+    return model
+
+
+def create_multi_model_3(mlp, cnn, output_shape=1):
+    from tensorflow.keras.layers import concatenate
+    from tensorflow.keras.layers import Dense
+    from tensorflow.keras.regularizers import l2
+    from tensorflow.keras.models import Model
+    from tensorflow.keras.optimizers import Adam
+    from tensorflow.keras.losses import mean_squared_error, mean_absolute_error
+
+    combined_input = concatenate([cnn.output, mlp.output])
+
+    dense_1 = Dense(20, activation="relu", kernel_regularizer=l2(0.0005))(combined_input)
+    dense_2 = Dense(10, activation="relu", kernel_regularizer=l2(0.0005))(dense_1)
+    out_dense = Dense(output_shape, activation="linear")(dense_2)
+
+    model = Model(inputs=[cnn.input, mlp.input], outputs=out_dense)
+    optimizer = Adam(lr=3e-4)
+    model.compile(loss=time_consistent_loss, optimizer=optimizer)
 
     return model
