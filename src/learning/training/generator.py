@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from sklearn.model_selection import train_test_split
+from tensorflow import convert_to_tensor
 
 from src.utilities.memory_maker import MemoryMaker
 
@@ -62,14 +63,7 @@ class Generator:
         return frame.shape, numeric.shape, diff.shape
 
     def generate(self, data='train'):
-        if data == 'train':
-            indexes = self.train_indexes
-            batch_count = self.train_batch_count
-        elif data == 'test':
-            indexes = self.test_indexes
-            batch_count = self.test_batch_count
-        else:
-            raise ValueError('Data type is not train or test!')
+        batch_count, indexes = self.__evaluate_indexes(data)
 
         while True:
             if self.shuffle:
@@ -81,19 +75,32 @@ class Generator:
 
                 yield (x_frame, x_numeric), y
 
+    def __evaluate_indexes(self, data):
+        if data == 'train':
+            indexes = self.train_indexes
+            batch_count = self.train_batch_count
+        elif data == 'test':
+            indexes = self.test_indexes
+            batch_count = self.test_batch_count
+        else:
+            raise ValueError('Data type is not train or test!')
+        return batch_count, indexes
+
     def generate_single_train(self):
         while True:
             index = np.random.choice(self.train_indexes, 1)[0]
 
             x_frame, x_numeric, y = self.__load_single_pair(index)
-            yield (x_frame, x_numeric), y
+            #print('train {}'.format(index))
+            yield convert_to_tensor(x_frame, dtype=np.float32), convert_to_tensor(y, dtype=np.float32)
 
     def generate_single_test(self):
         while True:
             index = np.random.randint(self.test_indexes, 1)[0]
 
             x_frame, x_numeric, y = self.__load_single_pair(index)
-            yield (x_frame, x_numeric), y
+            #print('test {}'.format(index))
+            yield convert_to_tensor(x_frame, dtype=np.float32), convert_to_tensor(y, dtype=np.float32)
 
     def __load_batch(self, batch_indexes):
         frames = []
