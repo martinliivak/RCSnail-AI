@@ -17,7 +17,7 @@ class GenFiles:
 
 
 class Generator:
-    def __init__(self, config, memory_tuple=None, base_path=None, batch_size=32, shuffle=True, column_mode='all', separate_files=False):
+    def __init__(self, config, memory_tuple=None, base_path=None, batch_size=32, column_mode='all', separate_files=False):
         if memory_tuple is not None:
             self.__memory = MemoryMaker(config, memory_tuple)
             self.memory_string = 'n{}_m{}'.format(*memory_tuple)
@@ -31,7 +31,6 @@ class Generator:
             self.path = config.path_to_session_files
 
         self.batch_size = batch_size
-        self.shuffle = shuffle
         self.separate_files = separate_files
         self.column_mode = column_mode
 
@@ -62,18 +61,29 @@ class Generator:
 
         return frame.shape, numeric.shape, diff.shape
 
-    def generate(self, data='train'):
+    def generate_with_numeric(self, data='train'):
         batch_count, indexes = self.__evaluate_indexes(data)
 
         while True:
-            if self.shuffle:
-                np.random.shuffle(indexes)
+            np.random.shuffle(indexes)
 
             for i in range(batch_count):
                 batch_indexes = indexes[i * self.batch_size:(i + 1) * self.batch_size]
                 x_frame, x_numeric, y = self.__load_batch(batch_indexes)
 
                 yield (x_frame, x_numeric), y
+
+    def generate(self, data='train'):
+        batch_count, indexes = self.__evaluate_indexes(data)
+
+        while True:
+            np.random.shuffle(indexes)
+
+            for i in range(batch_count):
+                batch_indexes = indexes[i * self.batch_size:(i + 1) * self.batch_size]
+                x_frame, x_numeric, y = self.__load_batch(batch_indexes)
+
+                yield x_frame, y
 
     def __evaluate_indexes(self, data):
         if data == 'train':
@@ -87,20 +97,22 @@ class Generator:
         return batch_count, indexes
 
     def generate_single_train(self):
+        batch_count, indexes = self.__evaluate_indexes('train')
         while True:
-            index = np.random.choice(self.train_indexes, 1)[0]
+            np.random.shuffle(indexes)
 
-            x_frame, x_numeric, y = self.__load_single_pair(index)
-            #print('train {}'.format(index))
-            yield convert_to_tensor(x_frame, dtype=np.float32), convert_to_tensor(y, dtype=np.float32)
+            for index in range(indexes):
+                x_frame, x_numeric, y = self.__load_single_pair(index)
+                yield convert_to_tensor(x_frame, dtype=np.float32), convert_to_tensor(y, dtype=np.float32)
 
     def generate_single_test(self):
+        batch_count, indexes = self.__evaluate_indexes('test')
         while True:
-            index = np.random.randint(self.test_indexes, 1)[0]
+            np.random.shuffle(indexes)
 
-            x_frame, x_numeric, y = self.__load_single_pair(index)
-            #print('test {}'.format(index))
-            yield convert_to_tensor(x_frame, dtype=np.float32), convert_to_tensor(y, dtype=np.float32)
+            for index in range(indexes):
+                x_frame, x_numeric, y = self.__load_single_pair(index)
+                yield convert_to_tensor(x_frame, dtype=np.float32), convert_to_tensor(y, dtype=np.float32)
 
     def __load_batch(self, batch_indexes):
         frames = []
