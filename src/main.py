@@ -46,6 +46,7 @@ async def main_dagger(context: Context):
 
             recorder.record_full(frame, telemetry, expert_action)
 
+            #mem_frame = transformer.session_frame(frame, mem_slice_frames)
             mem_frame = transformer.session_frame_wide(frame, mem_slice_frames)
             mem_telemetry = transformer.session_numeric_input(telemetry, mem_slice_numerics)
             mem_expert_action = transformer.session_expert_action(expert_action)

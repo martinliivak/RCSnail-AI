@@ -28,6 +28,13 @@ class Transformer:
         resized_frames /= 255
         return resized_frames
 
+    def cut_wide_and_normalize_video_shifted(self, frames_list):
+        resized_frames = np.zeros((len(frames_list) - 1, self.full_resolution[1] // 2, self.full_resolution[0], 3), dtype=np.float32)
+        for i in range(0, resized_frames.shape[0]):
+            resized_frames[i] = frames_list[i][(self.full_resolution[1] // 2):, :, :].astype(np.float32)
+        resized_frames /= 255
+        return resized_frames
+
     def session_frame(self, frame, memory_list):
         resized = cv2.resize(frame, dsize=self.resolution, interpolation=cv2.INTER_CUBIC).astype(np.float32)
         resized /= 255
