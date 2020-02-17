@@ -1,7 +1,6 @@
 import os
 import numpy as np
 from sklearn.model_selection import train_test_split
-from tensorflow import convert_to_tensor
 
 from src.utilities.memory_maker import MemoryMaker
 

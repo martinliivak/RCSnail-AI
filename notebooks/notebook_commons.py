@@ -27,7 +27,7 @@ def read_stored_data_with_labels(reader, transformer, filename, numeric_columns,
     return resized_frames, telemetry.to_numpy(), diffs.to_numpy()
 
 
-def read_stored_data_with_shifted_labels(reader, transformer, filename, numeric_columns, label_columns):
+def read_stored_data_with_shifted_labels(reader, frame_transformation, filename, numeric_columns, label_columns):
     telemetry = reader.read_specific_telemetry_columns(filename + '.csv', numeric_columns)
     telemetry.drop(telemetry.tail(1).index, inplace=True)
 
@@ -35,7 +35,7 @@ def read_stored_data_with_shifted_labels(reader, transformer, filename, numeric_
     diffs.drop(diffs.head(1).index, inplace=True)
 
     frames = reader.read_video(filename + '.avi')
-    resized_frames = transformer.resize_and_normalize_video_shifted(frames)
+    resized_frames = frame_transformation(frames)
 
     return resized_frames, telemetry.to_numpy(), diffs.to_numpy()
 
