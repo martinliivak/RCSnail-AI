@@ -27,7 +27,6 @@ def read_stored_data_with_labels(reader, transformer, filename, numeric_columns,
     return resized_frames, telemetry.to_numpy(), diffs.to_numpy()
 
 
-# TODO create this method using generator filereaders
 def read_stored_data_with_shifted_labels(reader, frame_transformation, filename, numeric_columns, label_columns):
     telemetry = reader.read_specific_telemetry_columns(filename + '.csv', numeric_columns)
     telemetry.drop(telemetry.tail(1).index, inplace=True)
@@ -62,3 +61,15 @@ def create_memorized_dataset(frames, telemetry, diffs, length, interval):
 
     assert mem_frames.shape[0] == mem_telems.shape[0] == mem_diffs.shape[0], "Lengths differ!"
     return mem_frames, mem_telems, mem_diffs
+
+
+def read_shifted_numerics_and_targets(reader, filename, numeric_columns, label_columns):
+    telemetry = reader.read_specific_telemetry_columns(filename + '.csv', numeric_columns)
+    telemetry.drop(telemetry.tail(1).index, inplace=True)
+
+    diffs = reader.read_specific_telemetry_columns(filename + '.csv', label_columns)
+    diffs.drop(diffs.head(1).index, inplace=True)
+
+    return telemetry.to_numpy(), diffs.to_numpy()
+
+
