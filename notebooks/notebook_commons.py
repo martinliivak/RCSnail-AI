@@ -27,6 +27,7 @@ def read_stored_data_with_labels(reader, transformer, filename, numeric_columns,
     return resized_frames, telemetry.to_numpy(), diffs.to_numpy()
 
 
+# TODO create this method using generator filereaders
 def read_stored_data_with_shifted_labels(reader, frame_transformation, filename, numeric_columns, label_columns):
     telemetry = reader.read_specific_telemetry_columns(filename + '.csv', numeric_columns)
     telemetry.drop(telemetry.tail(1).index, inplace=True)

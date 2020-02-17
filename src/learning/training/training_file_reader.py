@@ -13,6 +13,7 @@ class TrainingFileReader:
     def __init__(self, path_to_training="../training/"):
         self.path_to_training = path_to_training
 
+    # TODO create generator variant of this method
     def read_video(self, filename):
         cap = cv2.VideoCapture(self.path_to_training + filename)
         frames = []
