@@ -93,8 +93,8 @@ def create_mlp_2(input_shape=(4,)):
     dense_1 = Dense(20, activation="relu", kernel_regularizer=l2(0.001))(dropout_1)
     dropout_2 = Dropout(0.5)(dense_1)
     dense_2 = Dense(10, activation="relu", kernel_regularizer=l2(0.001))(dropout_2)
-
-    return Model(inputs, dense_2)
+    dropout_2 = Dropout(0.5)(dense_2)
+    return Model(inputs, dropout_2)
 
 
 def create_cnn_2(input_shape=(40, 60, 3)):
@@ -164,6 +164,7 @@ def create_multi_model_2(mlp, cnn, output_shape=1):
     combined_input = concatenate([cnn.output, mlp.output])
 
     dense_1 = Dense(20, activation="elu", kernel_regularizer=l2(0.0005))(combined_input)
+
     dense_2 = Dense(10, activation="elu", kernel_regularizer=l2(0.0005))(dense_1)
     out_dense = Dense(output_shape, activation="linear")(dense_2)
 
