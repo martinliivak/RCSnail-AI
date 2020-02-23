@@ -1,4 +1,5 @@
 import os
+import time
 import glob
 import logging
 import traceback
@@ -44,7 +45,7 @@ async def main_dagger(context: Context):
                 print("None datas")
                 continue
 
-            recorder.record_full(frame, telemetry, expert_action)
+            #recorder.record_with_expert(frame, telemetry, expert_action)
 
             #mem_frame = transformer.session_frame(frame, mem_slice_frames)
             mem_frame = transformer.session_frame_wide(frame, mem_slice_frames)
@@ -52,6 +53,8 @@ async def main_dagger(context: Context):
             mem_expert_action = transformer.session_expert_action(expert_action)
             if mem_frame is None or mem_telemetry is None:
                 continue
+
+            start_time = time.time()
 
             data_count += recorder.record_session(mem_frame, mem_telemetry, mem_expert_action)
             if conf.dagger_training_enabled and data_count % 1000 == 0:
@@ -75,13 +78,17 @@ async def main_dagger(context: Context):
                         prediction = expert_action
                     else:
                         prediction = model.predict(mem_frame, mem_telemetry).to_dict()
+                        # TODO when more aspects are predicted remove these
+                        prediction['d_gear'] = mem_expert_action[0]
+                        prediction['d_throttle'] = mem_expert_action[2]
                 elif conf.control_mode == 'full_expert':
                     prediction = expert_action
+                    prediction['p_steering'] = model.predict(mem_frame, mem_telemetry).to_dict()['d_steering']
                 else:
                     raise ValueError('Misconfigured control mode!')
 
+                recorder.record_full(frame, telemetry, expert_action, prediction)
                 controls_queue.send_json(prediction)
-                #recorder.record_post_mortem(telemetry, expert_actions, prediction)
             except Exception as ex:
                 print("Predicting exception: {}".format(ex))
                 traceback.print_tb(ex.__traceback__)
@@ -98,7 +105,8 @@ async def main_dagger(context: Context):
         logging.info("Session partials deleted successfully.")
 
         if recorder is not None:
-            recorder.save_session_with_expert()
+            #recorder.save_session_with_expert()
+            recorder.save_session_with_predictions()
 
 
 async def fit_model_with_generator(model, conf):

@@ -21,6 +21,7 @@ class Recorder:
         self.frames = []
         self.telemetry = []
         self.expert_actions = []
+        self.predictions = []
 
         self.session_frames = []
         self.session_telemetry = []
@@ -38,11 +39,20 @@ class Recorder:
             return 1
         return 0
 
-    def record_full(self, frame, telemetry, expert_actions):
+    def record_with_expert(self, frame, telemetry, expert_actions):
         if telemetry is not None and frame is not None and expert_actions is not None:
             self.frames.append(frame)
             self.telemetry.append(telemetry)
             self.expert_actions.append(expert_actions)
+            return 1
+        return 0
+
+    def record_full(self, frame, telemetry, expert_actions, predictions):
+        if telemetry is not None and frame is not None and expert_actions is not None:
+            self.frames.append(frame)
+            self.telemetry.append(telemetry)
+            self.expert_actions.append(expert_actions)
+            self.predictions.append(predictions)
             return 1
         return 0
 
@@ -97,6 +107,35 @@ class Recorder:
         df_telem = pd.DataFrame(self.telemetry)
         df_expert = pd.DataFrame(self.expert_actions)
         df = pd.concat([df_telem, df_expert], axis=1)
+        df.to_csv(self.storage_full_path + '.csv')
+
+        logging.info("Telemetry, expert, and video saved successfully.")
+
+    def save_session_with_predictions(self):
+        session_length = len(self.telemetry)
+        assert session_length == len(self.frames) == len(self.expert_actions), "Stored actions are not of same length."
+
+        if session_length <= 0:
+            logging.info("Nothing to record, closing.")
+            return
+
+        logging.info("Number of training instances to be saved: " + str(session_length))
+
+        out = cv2.VideoWriter(self.storage_full_path + ".avi",
+                              cv2.VideoWriter_fourcc(*'DIVX'),
+                              self.fps,
+                              self.resolution)
+
+        for i in range(session_length):
+            out.write(self.frames[i].astype(np.uint8))
+        out.release()
+
+        df_telem = pd.DataFrame(self.telemetry)
+        df_expert = pd.DataFrame(self.expert_actions)
+        df_predictions = pd.DataFrame(self.predictions)
+        df_predictions = df_predictions[['p_steering']]
+
+        df = pd.concat([df_telem, df_expert, df_predictions], axis=1)
         df.to_csv(self.storage_full_path + '.csv')
 
         logging.info("Telemetry, expert, and video saved successfully.")

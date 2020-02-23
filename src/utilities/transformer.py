@@ -43,6 +43,7 @@ class Transformer:
     def session_frame_wide(self, frame, memory_list):
         resized = frame[(self.full_resolution[1] // 2):, :, :].astype(np.float32)
         resized /= 255
+        #Image.fromarray((resized * 255).astype(np.uint8)).show()
         return self.__memory.memory_creator(resized, memory_list, axis=2)
 
     def session_numeric_input(self, telemetry, memory_list):
