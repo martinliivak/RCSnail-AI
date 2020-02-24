@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime
 import glob
 import logging
 import traceback
@@ -45,6 +46,7 @@ async def main_dagger(context: Context):
                 print("None datas")
                 continue
 
+            telemetry['p_start'] = int(datetime.now().timestamp() * 1000)
             #recorder.record_with_expert(frame, telemetry, expert_action)
 
             #mem_frame = transformer.session_frame(frame, mem_slice_frames)
@@ -53,8 +55,6 @@ async def main_dagger(context: Context):
             mem_expert_action = transformer.session_expert_action(expert_action)
             if mem_frame is None or mem_telemetry is None:
                 continue
-
-            start_time = time.time()
 
             data_count += recorder.record_session(mem_frame, mem_telemetry, mem_expert_action)
             if conf.dagger_training_enabled and data_count % 1000 == 0:
@@ -82,11 +82,19 @@ async def main_dagger(context: Context):
                         prediction['d_gear'] = mem_expert_action[0]
                         prediction['d_throttle'] = mem_expert_action[2]
                 elif conf.control_mode == 'full_expert':
-                    prediction = expert_action
+                    prediction = expert_action.copy()
                     prediction['p_steering'] = model.predict(mem_frame, mem_telemetry).to_dict()['d_steering']
                 else:
                     raise ValueError('Misconfigured control mode!')
 
+                #x = np.random.choice(mem_frame.shape[0], 3)
+                #y = np.random.choice(mem_frame.shape[1], 3)
+                #z = np.random.choice(mem_frame.shape[2], 3)
+                #for i in range(x.shape[0]):
+                #    prediction['p_id_{}'.format(i)] = '{},{},{}'.format(x[i], y[i], z[i])
+                #    prediction['p_{}'.format(i)] = str(mem_frame[x[i], y[i], z[i]])
+
+                prediction['p_end'] = int(datetime.now().timestamp() * 1000)
                 recorder.record_full(frame, telemetry, expert_action, prediction)
                 controls_queue.send_json(prediction)
             except Exception as ex:
