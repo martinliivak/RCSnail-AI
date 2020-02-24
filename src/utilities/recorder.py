@@ -133,7 +133,6 @@ class Recorder:
         df_telem = pd.DataFrame(self.telemetry)
         df_expert = pd.DataFrame(self.expert_actions)
         df_predictions = pd.DataFrame(self.predictions)
-        #df_predictions = df_predictions[['p_steering', 'p_end', 'p_id_0', 'p_id_1', 'p_id_2', 'p_0', 'p_1', 'p_2']]
         df_predictions = df_predictions[['p_steering', 'p_end']]
 
         df = pd.concat([df_telem, df_expert, df_predictions], axis=1)

@@ -87,13 +87,6 @@ async def main_dagger(context: Context):
                 else:
                     raise ValueError('Misconfigured control mode!')
 
-                #x = np.random.choice(mem_frame.shape[0], 3)
-                #y = np.random.choice(mem_frame.shape[1], 3)
-                #z = np.random.choice(mem_frame.shape[2], 3)
-                #for i in range(x.shape[0]):
-                #    prediction['p_id_{}'.format(i)] = '{},{},{}'.format(x[i], y[i], z[i])
-                #    prediction['p_{}'.format(i)] = str(mem_frame[x[i], y[i], z[i]])
-
                 prediction['p_end'] = int(datetime.now().timestamp() * 1000)
                 recorder.record_full(frame, telemetry, expert_action, prediction)
                 controls_queue.send_json(prediction)
