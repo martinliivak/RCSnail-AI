@@ -23,7 +23,6 @@ class TrainingFileReader:
             if cv2.waitKey(1) & 0xFF == ord('q') or not result:
                 break
 
-            frame = cv2.flip(frame, 1)
             frames.append(frame)
 
         cap.release()
@@ -39,7 +38,6 @@ class TrainingFileReader:
             if cv2.waitKey(1) & 0xFF == ord('q') or not result:
                 break
 
-            frame = cv2.flip(frame, 1)
             yield i, frame
 
             i += 1
