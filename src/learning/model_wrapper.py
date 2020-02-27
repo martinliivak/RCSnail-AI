@@ -3,19 +3,17 @@ import datetime
 import numpy as np
 from commons.car_controls import CarControlUpdates
 
-from src.learning.models import create_mlp, create_cnn, create_multi_model
+from src.learning.models import create_mlp, create_cnn, create_multi_model, create_cnn_alone
 from src.learning.training.car_mapping import CarMapping
 from src.utilities.memory_maker import MemoryMaker
 
 
 class ModelWrapper:
-    def __init__(self, config, frames_shape=(40, 60, 3), numeric_shape=(4,), output_shape=4):
+    def __init__(self, config, numeric_shape=(4,), output_shape=4):
         self.__path_to_models = config.path_to_models
         self.__memory = MemoryMaker(config)
         self.__prediction_mode = config.prediction_mode
 
-        # TODO try to make this dynamic based on actual data... if possible?
-        # TODO some shapes have to be per model
         self.__frames_shape = (config.frame_height, config.frame_width, 3 * config.m_length)
         self.__numeric_shape = (1 * config.m_length,)
         self.__output_shape = 1
@@ -34,9 +32,7 @@ class ModelWrapper:
         self.__mapping = CarMapping()
 
     def __create_new_model(self):
-        mlp = create_mlp(input_shape=self.__numeric_shape)
-        cnn = create_cnn(input_shape=self.__frames_shape)
-        return create_multi_model(mlp, cnn, output_shape=self.__output_shape)
+        return create_cnn_alone(input_shape=self.__frames_shape, output_shape=self.__output_shape)
 
     def __load_model(self, model_filename: str):
         from tensorflow.keras.models import load_model
@@ -62,8 +58,6 @@ class ModelWrapper:
         # prediction from frame and steering
         mem_steering = self.__memory.columns_from_memorized(mem_telemetry, columns=(1,))
         predictions = self.model.predict([mem_frame[np.newaxis, :], mem_steering[np.newaxis, :]])
-        # prediction from frame
-        #predictions = self.model.predict(mem_frame[np.newaxis, :])
 
         return self.updates_from_prediction(predictions)
 
