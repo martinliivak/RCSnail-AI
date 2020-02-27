@@ -16,7 +16,7 @@ class ModelWrapper:
 
         # TODO try to make this dynamic based on actual data... if possible?
         # TODO some shapes have to be per model
-        self.__frames_shape = (60, 180, 3 * config.m_length)
+        self.__frames_shape = (config.frame_height, config.frame_width, 3 * config.m_length)
         self.__numeric_shape = (1 * config.m_length,)
         self.__output_shape = 1
 

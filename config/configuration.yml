@@ -8,8 +8,8 @@ path_to_models: "../../training/models/"
 recording_height: 120
 recording_width: 180
 recording_fps: 20
-frame_height: 40
-frame_width: 60
+frame_height: 50
+frame_width: 180
 # Procedural flags
 control_mode: full_expert  # modes: full_model, shared, full_expert
 m_length: 1 # memory length

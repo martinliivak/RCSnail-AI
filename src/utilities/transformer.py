@@ -10,40 +10,20 @@ from src.utilities.memory_maker import MemoryMaker
 class Transformer:
     def __init__(self, config, memory_tuple=None):
         self.resolution = (config.frame_width, config.frame_height)
-        self.full_resolution = (config.recording_width, config.recording_height)
         self.__memory = MemoryMaker(config, memory_tuple)
         self.__labels = Collector()
 
-    def resize_and_normalize_video(self, frames_list):
-        resized_frames = np.zeros((len(frames_list), self.resolution[1], self.resolution[0], 3), dtype=np.float32)
-        for i in range(0, resized_frames.shape[0]):
-            resized_frames[i] = cv2.resize(frames_list[i], dsize=self.resolution, interpolation=cv2.INTER_CUBIC).astype(np.float32)
-        resized_frames /= 255
-        return resized_frames
-
-    def resize_and_normalize_video_shifted(self, frames_list):
-        resized_frames = np.zeros((len(frames_list) - 1, self.resolution[1], self.resolution[0], 3), dtype=np.float32)
-        for i in range(0, resized_frames.shape[0]):
-            resized_frames[i] = cv2.resize(frames_list[i], dsize=self.resolution, interpolation=cv2.INTER_CUBIC).astype(np.float32)
-        resized_frames /= 255
-        return resized_frames
-
     def cut_wide_and_normalize_video_shifted(self, frames_list):
-        resized_frames = np.zeros((len(frames_list) - 1, self.full_resolution[1] // 2, self.full_resolution[0], 3), dtype=np.float32)
+        resized_frames = np.zeros((len(frames_list) - 1, self.resolution[1], self.resolution[0], 3), dtype=np.float32)
+        frame_height = frames_list[0].shape[0]
         for i in range(0, resized_frames.shape[0]):
-            resized_frames[i] = frames_list[i][(self.full_resolution[1] // 2):, :, :].astype(np.float32)
+            resized_frames[i] = frames_list[i][(frame_height - self.resolution[1]):, :, :].astype(np.float32)
         resized_frames /= 255
         return resized_frames
-
-    def session_frame(self, frame, memory_list):
-        resized = cv2.resize(frame, dsize=self.resolution, interpolation=cv2.INTER_CUBIC).astype(np.float32)
-        resized /= 255
-        return self.__memory.memory_creator(resized, memory_list, axis=2)
 
     def session_frame_wide(self, frame, memory_list):
-        resized = frame[(self.full_resolution[1] // 2):, :, :].astype(np.float32)
+        resized = frame[(frame.shape[0] - self.resolution[1]):, :, :].astype(np.float32)
         resized /= 255
-        #Image.fromarray((resized * 255).astype(np.uint8)).show()
         return self.__memory.memory_creator(resized, memory_list, axis=2)
 
     def session_numeric_input(self, telemetry, memory_list):
