@@ -23,14 +23,31 @@ class TrainingFileReader:
             if cv2.waitKey(1) & 0xFF == ord('q') or not result:
                 break
 
-            frame = cv2.flip(frame, 1)
             frames.append(frame)
 
         cap.release()
         return np.array(frames)
 
+    def read_video_gen(self, filename, yield_count):
+        cap = cv2.VideoCapture(self.path_to_training + filename)
+        i = 0
+
+        while True:
+            result, frame = cap.read()
+
+            if cv2.waitKey(1) & 0xFF == ord('q') or not result:
+                break
+
+            yield i, frame
+
+            i += 1
+            if i + 1 > yield_count:
+                break
+
+        cap.release()
+
     def read_telemetry_as_csv(self, filename):
         return pd.read_csv(self.path_to_training + filename)
 
     def read_specific_telemetry_columns(self, filename, columns):
-        return pd.read_csv(self.path_to_training + filename, usecols=columns)
+        return pd.read_csv(self.path_to_training + filename, usecols=columns)[columns]

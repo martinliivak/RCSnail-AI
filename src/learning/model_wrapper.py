@@ -3,24 +3,28 @@ import datetime
 import numpy as np
 from commons.car_controls import CarControlUpdates
 
-from src.learning.models import create_mlp, create_cnn, create_multi_model
+from src.learning.models import create_mlp, create_cnn, create_multi_model, create_cnn_alone
 from src.learning.training.car_mapping import CarMapping
-from utilities.memory_maker import MemoryMaker
+from src.utilities.memory_maker import MemoryMaker
 
 
 class ModelWrapper:
-    def __init__(self, config, model_file=None, frames_shape=(40, 60, 3), numeric_shape=(4,), output_shape=4):
+    def __init__(self, config, numeric_shape=(4,), output_shape=4):
         self.__path_to_models = config.path_to_models
         self.__memory = MemoryMaker(config)
+        self.__prediction_mode = config.prediction_mode
 
-        # TODO try to make this dynamic based on actual data?
-        self.__frames_shape = (40, 60, 3 * config.m_length)
-        self.__numeric_shape = (2 * config.m_length,)
+        self.__frames_shape = (config.frame_height, config.frame_width, 3 * config.m_length)
+        self.__numeric_shape = (1 * config.m_length,)
         self.__output_shape = 1
 
-        # TODO split model up
-        if model_file is not None:
-            self.model = self.__load_model(model_file)
+        # TODO split models to steering, throttle & gear models
+        if config.pretrained_start:
+            model_name = 'model_n{}_m{}_{}.h5'.format(config.m_length, config.m_interval, config.model_num)
+            if os.path.isfile(self.__path_to_models + model_name):
+                self.model = self.__load_model(model_name)
+            else:
+                raise ValueError('Model not found!')
         else:
             self.model = self.__create_new_model()
 
@@ -28,13 +32,12 @@ class ModelWrapper:
         self.__mapping = CarMapping()
 
     def __create_new_model(self):
-        mlp = create_mlp(input_shape=self.__numeric_shape)
-        cnn = create_cnn(input_shape=self.__frames_shape)
-        return create_multi_model(mlp, cnn, output_shape=self.__output_shape)
+        return create_cnn_alone(input_shape=self.__frames_shape, output_shape=self.__output_shape)
 
     def __load_model(self, model_filename: str):
         from tensorflow.keras.models import load_model
-        return load_model(self.__path_to_models + model_filename + ".h5")
+        print("Loaded " + model_filename)
+        return load_model(self.__path_to_models + model_filename)
 
     def save_model(self, model_filename: str):
         self.model.save(self.__path_to_models + model_filename + ".h5")
@@ -42,6 +45,7 @@ class ModelWrapper:
 
     def fit(self, generator, epochs=1, verbose=1):
         try:
+            # TODO might need separate generate (with_numeric) method support
             self.model.fit(generator.generate(data='train'),
                            steps_per_epoch=generator.train_batch_count,
                            validation_data=generator.generate(data='test'),
@@ -51,39 +55,16 @@ class ModelWrapper:
             print("Generator training exception: {}".format(ex))
 
     def predict(self, mem_frame, mem_telemetry):
-        # gear, steering, throttle, braking
-        mem_steering = self.__memory.columns_from_memorized(mem_telemetry, columns=(1, 2))
-
+        # prediction from frame and steering
+        mem_steering = self.__memory.columns_from_memorized(mem_telemetry, columns=(1,))
         predictions = self.model.predict([mem_frame[np.newaxis, :], mem_steering[np.newaxis, :]])
-        return updates_from_prediction(predictions)
 
+        return self.updates_from_prediction(predictions)
 
-def updates_from_prediction(prediction):
-    prediction_values = prediction.tolist()[0]
-    # print("preds: {}".format(prediction_values))
+    def updates_from_prediction(self, prediction):
+        prediction_values = prediction.tolist()[0]
 
-    # predicted_gear = round_predicted_gear(prediction_values[0])
-    # predicted_steering = np.clip(prediction_values[1], -0.1, 0.1)
-    # predicted_throttle = np.clip(prediction_values[2], 0, 0.1)
-    # predicted_braking = round_predicted_braking(prediction_values[3])
-
-    # return CarControlUpdates(predicted_gear, predicted_steering, predicted_throttle, predicted_braking)
-    return CarControlUpdates(1, prediction_values[0], 0.0, 0.0)
-
-
-def round_predicted_gear(predicted_gear):
-    if predicted_gear < 0.3:
-        return 0
-    elif 0.3 <= predicted_gear < 1.6:
-        return 1
-    else:
-        return 2
-
-
-def round_predicted_braking(predicted_braking):
-    if np.abs(predicted_braking) < 0.01:
-        return 0.0
-    return predicted_braking
+        return CarControlUpdates(1, prediction_values[0], 0.0, 0.0, self.__prediction_mode)
 
 
 def get_model_file_name(path_to_models: str):
