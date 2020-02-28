@@ -9,18 +9,27 @@ from src.utilities.memory_maker import MemoryMaker
 
 
 class ModelWrapper:
-    def __init__(self, config, numeric_shape=(4,), output_shape=4):
+    def __init__(self, config, numeric_shape=(4,), output_shape=4, memory_tuple=None, model_num=None):
+        if memory_tuple is not None:
+            self.memory_length, self.memory_interval = memory_tuple
+        else:
+            self.memory_length = config.m_length
+            self.memory_interval = config.m_interval
+
+        if model_num is None:
+            model_num = config.model_num
+
         self.__path_to_models = config.path_to_models
-        self.__memory = MemoryMaker(config)
+        self.__memory = MemoryMaker(config, memory_tuple=memory_tuple)
         self.__prediction_mode = config.prediction_mode
 
-        self.__frames_shape = (config.frame_height, config.frame_width, 3 * config.m_length)
-        self.__numeric_shape = (1 * config.m_length,)
+        self.__frames_shape = (config.frame_height, config.frame_width, 3 * self.memory_length)
+        self.__numeric_shape = (1 * self.memory_length,)
         self.__output_shape = 1
 
         # TODO split models to steering, throttle & gear models
         if config.pretrained_start:
-            model_name = 'model_n{}_m{}_{}.h5'.format(config.m_length, config.m_interval, config.model_num)
+            model_name = 'model_n{}_m{}_{}.h5'.format(self.memory_length, self.memory_interval, model_num)
             if os.path.isfile(self.__path_to_models + model_name):
                 self.model = self.__load_model(model_name)
             else:

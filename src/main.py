@@ -83,6 +83,7 @@ async def main_dagger(context: Context):
                 elif conf.control_mode == 'full_expert':
                     prediction = expert_action.copy()
                     prediction['p_steering'] = model.predict(mem_frame, mem_telemetry).to_dict()['d_steering']
+                    prediction['p_steering'] = 0.0
                 else:
                     raise ValueError('Misconfigured control mode!')
 
