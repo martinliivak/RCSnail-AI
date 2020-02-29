@@ -58,7 +58,7 @@ class Generator:
         if not hasattr(diff, '__len__'):
             return frame.shape, numeric.shape, 1
 
-        return frame.shape, numeric.shape, diff.shape
+        return frame.shape, numeric.shape, diff.shape[0]
 
     def generate_with_numeric(self, data='train'):
         batch_count, indexes = self.__evaluate_indexes(data)
@@ -138,10 +138,10 @@ class Generator:
                 numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, index), allow_pickle=True)
                 diff = np.load(self.path + GenFiles.diff.format(self.memory_string, index), allow_pickle=True)
 
-            # steering
-            numeric = self.__memory.columns_from_memorized(numeric, columns=(1,))
-            # steering
-            diff = diff[1]
+            # steering + throttle
+            numeric = self.__memory.columns_from_memorized(numeric, columns=(1, 2,))
+            # steering + throttle
+            diff = diff[1:3]
         elif self.column_mode == 'throttle':
             pass
         elif self.column_mode == 'gear':

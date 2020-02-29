@@ -9,7 +9,7 @@ from src.utilities.memory_maker import MemoryMaker
 
 
 class ModelWrapper:
-    def __init__(self, config, numeric_shape=(4,), output_shape=4, memory_tuple=None, model_num=None):
+    def __init__(self, config, numeric_shape=(4,), output_shape=1, memory_tuple=None, model_num=None):
         if memory_tuple is not None:
             self.memory_length, self.memory_interval = memory_tuple
         else:
@@ -25,7 +25,7 @@ class ModelWrapper:
 
         self.__frames_shape = (config.frame_height, config.frame_width, 3 * self.memory_length)
         self.__numeric_shape = (1 * self.memory_length,)
-        self.__output_shape = 1
+        self.__output_shape = output_shape
 
         # TODO split models to steering, throttle & gear models
         if config.pretrained_start:
@@ -73,7 +73,7 @@ class ModelWrapper:
     def updates_from_prediction(self, prediction):
         prediction_values = prediction.tolist()[0]
 
-        return CarControlUpdates(1, prediction_values[0], 0.0, 0.0, self.__prediction_mode)
+        return CarControlUpdates(1, prediction_values[0], prediction_values[1], 0.0, self.__prediction_mode)
 
 
 def get_model_file_name(path_to_models: str):

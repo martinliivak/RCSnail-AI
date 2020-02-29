@@ -27,5 +27,6 @@ class MemoryMaker:
         return np.concatenate(near_memory, axis=axis)
 
     def columns_from_memorized(self, memorized, columns=(1,)):
+        """(1,) for steering column. (1,2,) for steering and throttle etc."""
         reshaped = memorized.reshape((self.memory_length, 4))
         return np.concatenate(reshaped[:, columns], axis=0)
