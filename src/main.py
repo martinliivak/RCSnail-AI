@@ -53,6 +53,8 @@ async def main_dagger(context: Context):
             mem_telemetry = transformer.session_numeric_input(telemetry, mem_slice_numerics)
             mem_expert_action = transformer.session_expert_action(expert_action)
             if mem_frame is None or mem_telemetry is None:
+                # Send back these first few instances, as the other application expects 1:1 responses
+                controls_queue.send_json(expert_action)
                 continue
 
             data_count += recorder.record_session(mem_frame, mem_telemetry, mem_expert_action)
@@ -68,7 +70,7 @@ async def main_dagger(context: Context):
                     prediction = model.predict(mem_frame, mem_telemetry).to_dict()
                     # TODO when more aspects are predicted remove these
                     prediction['d_gear'] = mem_expert_action[0]
-                    prediction['d_throttle'] = mem_expert_action[2]
+                    #prediction['d_throttle'] = mem_expert_action[2]
                 elif conf.control_mode == 'shared':
                     expert_probability = np.exp(-0.15 * dagger_iteration)
                     model_probability = np.random.random()
