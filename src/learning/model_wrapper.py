@@ -3,7 +3,8 @@ import datetime
 import numpy as np
 from commons.car_controls import CarControlUpdates
 
-from src.learning.models import create_mlp, create_cnn, create_multi_model, create_cnn_alone
+from src.learning.models import create_mlp, create_cnn, create_multi_model, create_cnn_alone, \
+    create_cnn_alone_categorical
 from src.learning.training.car_mapping import CarMapping
 from src.utilities.memory_maker import MemoryMaker
 
@@ -21,7 +22,6 @@ class ModelWrapper:
 
         self.__path_to_models = config.path_to_models
         self.__memory = MemoryMaker(config, memory_tuple=memory_tuple)
-        self.__prediction_mode = config.prediction_mode
 
         self.__frames_shape = (config.frame_height, config.frame_width, 3 * self.memory_length)
         self.__numeric_shape = (1 * self.memory_length,)
@@ -30,12 +30,13 @@ class ModelWrapper:
         # TODO split models to steering, throttle & gear models
         if config.pretrained_start:
             model_name = 'model_n{}_m{}_{}.h5'.format(self.memory_length, self.memory_interval, model_num)
-            if os.path.isfile(self.__path_to_models + model_name):
-                self.model = self.__load_model(model_name)
-            else:
-                raise ValueError('Model not found!')
+            gear_model_name = 'gear_model_n{}_m{}_{}.h5'.format(self.memory_length, self.memory_interval, model_num)
+
+            self.model = self.__load_model(model_name)
+            self.gear_model = self.__load_model(gear_model_name)
         else:
             self.model = self.__create_new_model()
+            self.gear_model = self.__create_new_gear_model()
 
         self.model.summary()
         self.__mapping = CarMapping()
@@ -43,14 +44,22 @@ class ModelWrapper:
     def __create_new_model(self):
         return create_cnn_alone(input_shape=self.__frames_shape, output_shape=self.__output_shape)
 
+    def __create_new_gear_model(self):
+        return create_cnn_alone_categorical(input_shape=self.__frames_shape, output_shape=1)
+
     def __load_model(self, model_filename: str):
         from tensorflow.keras.models import load_model
-        print("Loaded " + model_filename)
-        return load_model(self.__path_to_models + model_filename)
+
+        if os.path.isfile(self.__path_to_models + model_filename):
+            return load_model(self.__path_to_models + model_filename)
+        else:
+            raise ValueError('Model not found!')
 
     def save_model(self, model_filename: str):
         self.model.save(self.__path_to_models + model_filename + ".h5")
         print("Model has been saved to {} as {}.h5".format(self.__path_to_models, model_filename))
+
+        # TODO save gear model
 
     def fit(self, generator, epochs=1, verbose=1):
         try:
@@ -60,6 +69,7 @@ class ModelWrapper:
                            validation_data=generator.generate(data='test'),
                            validation_steps=generator.test_batch_count,
                            epochs=epochs, verbose=verbose)
+            # TODO fit gear model
         except Exception as ex:
             print("Generator training exception: {}".format(ex))
 
@@ -67,13 +77,15 @@ class ModelWrapper:
         # prediction from frame and steering
         mem_steering = self.__memory.columns_from_memorized(mem_telemetry, columns=(1,))
         predictions = self.model.predict([mem_frame[np.newaxis, :], mem_steering[np.newaxis, :]])
+        gear_predictions = self.gear_model.predict([mem_frame[np.newaxis, :], mem_steering[np.newaxis, :]])
 
-        return self.updates_from_prediction(predictions)
+        return self.updates_from_prediction(predictions, gear_predictions)
 
-    def updates_from_prediction(self, prediction):
+    def updates_from_prediction(self, prediction, gear_prediction):
         prediction_values = prediction.tolist()[0]
+        gear_prediction_values = gear_prediction.tolist()[0]
 
-        return CarControlUpdates(1, prediction_values[0], prediction_values[1], 0.0, self.__prediction_mode)
+        return CarControlUpdates(gear_prediction_values[0], prediction_values[0], prediction_values[1], 0.0)
 
 
 def get_model_file_name(path_to_models: str):

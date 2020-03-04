@@ -17,7 +17,6 @@ m_interval: 1 # memory interval
 
 # Model wrapper
 pretrained_start: true  # should load model from file or nah
-prediction_mode: steer  # modes: supervisor, steer, steer_diff
 model_num: 7
 
 dagger_training_enabled: false
