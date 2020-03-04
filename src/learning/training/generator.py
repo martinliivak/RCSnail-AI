@@ -9,14 +9,13 @@ class GenFiles:
     frame = 'frame_{}_{:07}.npy'
     numeric = 'numeric_{}_{:07}.npy'
     diff = 'diff_{}_{:07}.npy'
-    steer = 'steer_{}_{:07}.npy'
-    steer_diff = 'steer_diff_{}_{:07}.npy'
 
     steer_sampling = 'steer_sample_{}.npy'
+    gear_sampling = 'gear_sample_{}.npy'
 
 
 class Generator:
-    def __init__(self, config, memory_tuple=None, base_path=None, batch_size=32, column_mode='all', separate_files=False):
+    def __init__(self, config, memory_tuple=None, base_path=None, batch_size=32, column_mode='all'):
         if memory_tuple is not None:
             self.__memory = MemoryMaker(config, memory_tuple)
             self.memory_string = 'n{}_m{}'.format(*memory_tuple)
@@ -30,7 +29,6 @@ class Generator:
             self.path = config.path_to_session_files
 
         self.batch_size = batch_size
-        self.separate_files = separate_files
         self.column_mode = column_mode
 
         indexes = self.__apply_upsampling()
@@ -44,8 +42,14 @@ class Generator:
         if not os.path.isfile(self.path + GenFiles.steer_sampling.format(self.memory_string)):
             return indexes
 
-        sampling_multipliers = np.load(self.path + GenFiles.steer_sampling.format(self.memory_string), allow_pickle=True)
-        assert indexes.shape[0] == sampling_multipliers.shape[0], 'Indexes have different lengths to sampling!'
+        if self.column_mode == 'steer':
+            sampling_multipliers = np.load(self.path + GenFiles.steer_sampling.format(self.memory_string), allow_pickle=True)
+            assert indexes.shape[0] == sampling_multipliers.shape[0], 'Indexes and sampling shape mismatch!'
+        elif self.column_mode == 'gear':
+            sampling_multipliers = np.load(self.path + GenFiles.gear_sampling.format(self.memory_string), allow_pickle=True)
+            assert indexes.shape[0] == sampling_multipliers.shape[0], 'Indexes and sampling shape mismatch!'
+        else:
+            raise ValueError('Misconfigured generator column mode!')
 
         return np.repeat(indexes, sampling_multipliers)
 
@@ -129,15 +133,10 @@ class Generator:
 
     def __load_single_pair(self, index):
         frame = np.load(self.path + GenFiles.frame.format(self.memory_string, index), allow_pickle=True)
+        numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, index), allow_pickle=True)
+        diff = np.load(self.path + GenFiles.diff.format(self.memory_string, index), allow_pickle=True)
 
         if self.column_mode == 'steer':
-            if self.separate_files:
-                numeric = np.load(self.path + GenFiles.steer.format(self.memory_string, index), allow_pickle=True)
-                diff = np.load(self.path + GenFiles.steer_diff.format(self.memory_string, index), allow_pickle=True)
-            else:
-                numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, index), allow_pickle=True)
-                diff = np.load(self.path + GenFiles.diff.format(self.memory_string, index), allow_pickle=True)
-
             # steering + throttle
             numeric = self.__memory.columns_from_memorized(numeric, columns=(1, 2,))
             # steering + throttle
@@ -145,7 +144,9 @@ class Generator:
         elif self.column_mode == 'throttle':
             pass
         elif self.column_mode == 'gear':
-            pass
+            # gear
+            numeric = self.__memory.columns_from_memorized(numeric, columns=(0,))
+            diff = diff[0]
         elif self.column_mode == 'all':
             numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, index), allow_pickle=True)
             diff = np.load(self.path + GenFiles.diff.format(self.memory_string, index), allow_pickle=True)
