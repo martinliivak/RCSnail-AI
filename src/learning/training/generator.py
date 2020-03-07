@@ -138,7 +138,7 @@ class Generator:
 
         if self.column_mode == 'steer':
             # steering + throttle
-            numeric = self.__memory.columns_from_memorized(numeric, columns=(1, 2,))
+            numeric = self.__memory.columns_from_memorized(numeric, columns=(0, 1, 2,))
             # steering + throttle
             diff = diff[1:3]
         elif self.column_mode == 'throttle':
@@ -148,8 +148,8 @@ class Generator:
             numeric = self.__memory.columns_from_memorized(numeric, columns=(0,))
             diff = diff[0]
         elif self.column_mode == 'all':
-            numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, index), allow_pickle=True)
-            diff = np.load(self.path + GenFiles.diff.format(self.memory_string, index), allow_pickle=True)
+            numeric = self.__memory.columns_from_memorized(numeric, columns=(0, 1, 2,))
+            diff = diff[0:3]
         else:
             raise ValueError('Misconfigured generator column mode!')
 
