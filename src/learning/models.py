@@ -205,6 +205,7 @@ def create_multi_model_2(mlp, cnn, output_shape=1):
 
     return model
 
+
 def create_multi_model_3(mlp, cnn, output_shape=1, categorical_shape=1):
     from tensorflow.keras.layers import concatenate
     from tensorflow.keras.layers import Dense
@@ -217,11 +218,18 @@ def create_multi_model_3(mlp, cnn, output_shape=1, categorical_shape=1):
 
     dense_1 = Dense(50, activation="elu", kernel_regularizer=l2(0.0005))(combined_input)
     dense_2 = Dense(10, activation="elu", kernel_regularizer=l2(0.0005))(dense_1)
-    out_dense = Dense(output_shape, activation="linear")(dense_2)
-    out_dense_categorical = Dense(categorical_shape, activation="softmax")(dense_2)
+    out_dense = Dense(output_shape, activation="linear", name="controls")(dense_2)
+    out_dense_categorical = Dense(categorical_shape, activation="softmax", name="gear")(dense_2)
 
     model = Model(inputs=[cnn.input, mlp.input], outputs=[out_dense, out_dense_categorical])
     optimizer = Adam(lr=3e-4)
-    model.compile(loss=mean_absolute_error, optimizer=optimizer)
+    losses = {
+        "controls": "mean_absolute_error",
+        "gear": "categorical_crossentropy"
+    }
+    loss_weights = {"controls": 1.0, "gear": 0.1}
+    # NB huge issue with loss being backpropped so this approach does not work at all.
+
+    model.compile(loss=losses, loss_weights=loss_weights, optimizer=optimizer)
 
     return model

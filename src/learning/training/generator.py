@@ -48,6 +48,8 @@ class Generator:
         elif self.column_mode == 'gear':
             sampling_multipliers = np.load(self.path + GenFiles.gear_sampling.format(self.memory_string), allow_pickle=True)
             assert indexes.shape[0] == sampling_multipliers.shape[0], 'Indexes and sampling shape mismatch!'
+        elif self.column_mode == 'all':
+            return indexes
         else:
             raise ValueError('Misconfigured generator column mode!')
 
@@ -64,6 +66,18 @@ class Generator:
 
         return frame.shape, numeric.shape, diff.shape[0]
 
+    def generate(self, data='train'):
+        batch_count, indexes = self.__evaluate_indexes(data)
+
+        while True:
+            np.random.shuffle(indexes)
+
+            for i in range(batch_count):
+                batch_indexes = indexes[i * self.batch_size:(i + 1) * self.batch_size]
+                x_frame, x_numeric, y = self.__load_batch(batch_indexes)
+
+                yield x_frame, y
+
     def generate_with_numeric(self, data='train'):
         batch_count, indexes = self.__evaluate_indexes(data)
 
@@ -76,7 +90,7 @@ class Generator:
 
                 yield (x_frame, x_numeric), y
 
-    def generate(self, data='train'):
+    def generate_with_super_duper(self, data='train'):
         batch_count, indexes = self.__evaluate_indexes(data)
 
         while True:
@@ -86,7 +100,7 @@ class Generator:
                 batch_indexes = indexes[i * self.batch_size:(i + 1) * self.batch_size]
                 x_frame, x_numeric, y = self.__load_batch(batch_indexes)
 
-                yield x_frame, y
+                yield (x_frame, x_numeric), {'controls': y[:, 1:3], 'gear': y[:, 0]}
 
     def __evaluate_indexes(self, data):
         if data == 'train':

@@ -86,9 +86,7 @@ class ModelWrapper:
         prediction_values = prediction.tolist()[0]
         gear_prediction_values = gear_prediction.tolist()[0]
 
-        #return CarControlUpdates(gear_prediction_values[0], prediction_values[0], prediction_values[1], 0.0)
-        return CarControlUpdates(prediction_values[0], prediction_values[1], prediction_values[2], 0.0)
-
+        return CarControlUpdates(gear_prediction_values[0], prediction_values[0], prediction_values[1], 0.0)
 
 def get_model_file_name(path_to_models: str):
     date = datetime.datetime.today().strftime("%Y_%m_%d")
