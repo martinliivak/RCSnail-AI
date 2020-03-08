@@ -133,7 +133,8 @@ class Recorder:
         df_telem = pd.DataFrame(self.telemetry)
         df_expert = pd.DataFrame(self.expert_actions)
         df_predictions = pd.DataFrame(self.predictions)
-        df_predictions = df_predictions[['p_steering', 'p_end']]
+        # df_predictions = df_predictions[['p_steering', 'p_end']]
+        df_predictions = df_predictions[['p_end']]
 
         df = pd.concat([df_telem, df_expert, df_predictions], axis=1)
         df.to_csv(self.storage_full_path + '.csv')

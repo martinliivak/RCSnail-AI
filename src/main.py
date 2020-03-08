@@ -29,7 +29,7 @@ async def main_dagger(context: Context):
     controls_queue = context.socket(zmq.PUB)
 
     try:
-        model = ModelWrapper(conf)
+        model = ModelWrapper(conf, output_shape=2)
         mem_slice_frames = []
         mem_slice_numerics = []
         data_count = 0
@@ -68,24 +68,21 @@ async def main_dagger(context: Context):
             try:
                 if conf.control_mode == 'full_model':
                     prediction = model.predict(mem_frame, mem_telemetry).to_dict()
-                    # TODO when more aspects are predicted remove these
                     prediction['d_gear'] = mem_expert_action[0]
                     #prediction['d_throttle'] = mem_expert_action[2]
+                elif conf.control_mode == 'full_expert':
+                    prediction = expert_action.copy()
+                    prediction['p_steering'] = model.predict(mem_frame, mem_telemetry).to_dict()['d_steering']
                 elif conf.control_mode == 'shared':
-                    expert_probability = np.exp(-0.15 * dagger_iteration)
+                    expert_probability = np.exp(-0.05 * dagger_iteration)
                     model_probability = np.random.random()
 
                     if expert_probability > model_probability:
                         prediction = expert_action
                     else:
                         prediction = model.predict(mem_frame, mem_telemetry).to_dict()
-                        # TODO when more aspects are predicted remove these
                         prediction['d_gear'] = mem_expert_action[0]
-                        prediction['d_throttle'] = mem_expert_action[2]
-                elif conf.control_mode == 'full_expert':
-                    prediction = expert_action.copy()
-                    prediction['p_steering'] = model.predict(mem_frame, mem_telemetry).to_dict()['d_steering']
-                    prediction['p_steering'] = 0.0
+                        #prediction['d_throttle'] = mem_expert_action[2]
                 else:
                     raise ValueError('Misconfigured control mode!')
 
