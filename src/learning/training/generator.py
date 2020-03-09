@@ -23,9 +23,11 @@ class Generator:
             self.__memory = MemoryMaker(config, (config.m_length, config.m_interval))
             self.memory_string = 'n{}_m{}'.format(config.m_length, config.m_interval)
 
+        self.session_mode = False
         if base_path is not None:
             self.path = base_path + self.memory_string + '/'
         else:
+            self.session_mode = True
             self.path = config.path_to_session_files
 
         self.batch_size = batch_size
@@ -38,8 +40,8 @@ class Generator:
         self.test_batch_count = len(self.test_indexes) // self.batch_size
 
     def __apply_upsampling(self):
-        indexes = np.arange(self.__count_instances())
-        if not os.path.isfile(self.path + GenFiles.steer_sampling.format(self.memory_string)):
+        indexes = np.arange(self.count_instances())
+        if self.session_mode:
             return indexes
 
         if self.column_mode == 'steer':
@@ -55,7 +57,7 @@ class Generator:
 
         return np.repeat(indexes, sampling_multipliers)
 
-    def __count_instances(self):
+    def count_instances(self):
         return len([fn for fn in os.listdir(self.path) if fn.startswith('frame_')])
 
     def get_shapes(self):
@@ -122,6 +124,15 @@ class Generator:
                 x_frame, x_numeric, y = self.__load_single_pair(index)
                 yield x_frame, y
 
+    def generate_single_train_with_numeric(self):
+        batch_count, indexes = self.__evaluate_indexes('train')
+        while True:
+            np.random.shuffle(indexes)
+
+            for index in indexes:
+                x_frame, x_numeric, y = self.__load_single_pair(index)
+                yield x_frame, x_numeric, y
+
     def generate_single_test(self):
         batch_count, indexes = self.__evaluate_indexes('test')
         while True:
@@ -130,6 +141,15 @@ class Generator:
             for index in indexes:
                 x_frame, x_numeric, y = self.__load_single_pair(index)
                 yield x_frame, y
+
+    def generate_single_test_with_numeric(self):
+        batch_count, indexes = self.__evaluate_indexes('test')
+        while True:
+            np.random.shuffle(indexes)
+
+            for index in indexes:
+                x_frame, x_numeric, y = self.__load_single_pair(index)
+                yield x_frame, x_numeric, y
 
     def __load_batch(self, batch_indexes):
         frames = []

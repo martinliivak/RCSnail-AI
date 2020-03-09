@@ -5,6 +5,7 @@ controls_queue_port: 5552
 path_to_training: "../../training/"
 path_to_session_files: "../../training/session/"
 path_to_models: "../../training/models/"
+path_to_dagger_models: "../../training/dagger_models/"
 recording_height: 120
 recording_width: 180
 recording_fps: 20
@@ -19,6 +20,7 @@ m_interval: 1 # memory interval
 pretrained_start: false  # should load model from file or nah
 model_num: 8
 
+# Imitation learning
 dagger_training_enabled: true
 dagger_epoch_size: 2000
 dagger_epochs_count: 16

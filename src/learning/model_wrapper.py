@@ -21,6 +21,7 @@ class ModelWrapper:
             model_num = config.model_num
 
         self.__path_to_models = config.path_to_models
+        self.__path_to_dagger_models = config.path_to_dagger_models
         self.__memory = MemoryMaker(config, memory_tuple=memory_tuple)
 
         self.__frames_shape = (config.frame_height, config.frame_width, 3 * self.memory_length)
@@ -55,10 +56,10 @@ class ModelWrapper:
         else:
             raise ValueError('Model {} not found!'.format(model_filename))
 
-    def save_model(self, model_filename: str):
+    def save_model(self):
+        model_filename = get_model_file_name(self.__path_to_models)
         self.model.save(self.__path_to_models + model_filename + ".h5")
         print("Model has been saved to {} as {}.h5".format(self.__path_to_models, model_filename))
-
         # TODO save gear model
 
     def fit(self, generator, epochs=1, verbose=1):
@@ -92,4 +93,4 @@ def get_model_file_name(path_to_models: str):
     date = datetime.datetime.today().strftime("%Y_%m_%d")
     models_from_same_date = list(filter(lambda file: date in file, os.listdir(path_to_models)))
 
-    return date + "_model_" + str(int(len(models_from_same_date) + 1))
+    return date + "_dagger_" + str(int(len(models_from_same_date) + 1))

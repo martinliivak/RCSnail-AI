@@ -104,6 +104,8 @@ async def main_dagger(context: Context):
             os.remove(f)
         logging.info("Session partials deleted successfully.")
 
+        model.save_model()
+
         if recorder is not None:
             #recorder.save_session_with_expert()
             recorder.save_session_with_predictions()
