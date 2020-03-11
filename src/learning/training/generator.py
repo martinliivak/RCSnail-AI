@@ -102,7 +102,7 @@ class Generator:
                 batch_indexes = indexes[i * self.batch_size:(i + 1) * self.batch_size]
                 x_frame, x_numeric, y = self.__load_batch(batch_indexes)
 
-                yield (x_frame, x_numeric), {'controls': y[:, 1:3], 'gear': y[:, 0]}
+                yield [x_frame, x_frame], y
 
     def __evaluate_indexes(self, data):
         if data == 'train':
@@ -174,7 +174,7 @@ class Generator:
 
         if self.column_mode == 'steer':
             # steering + throttle
-            numeric = self.__memory.columns_from_memorized(numeric, columns=(0, 1, 2,))
+            numeric = self.__memory.columns_from_memorized(numeric, columns=(1, 2,))
             # steering + throttle
             diff = diff[1:3]
         elif self.column_mode == 'throttle':

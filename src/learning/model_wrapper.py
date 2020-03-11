@@ -76,8 +76,9 @@ class ModelWrapper:
 
     def predict(self, mem_frame, mem_telemetry):
         # prediction from frame and steering
-        mem_steering = self.__memory.columns_from_memorized(mem_telemetry, columns=(0, 1, 2,))
-        predictions = self.model.predict([mem_frame[np.newaxis, :], mem_steering[np.newaxis, :]])
+        mem_steering = self.__memory.columns_from_memorized(mem_telemetry, columns=(1, 2,))
+        #predictions = self.model.predict([mem_frame[np.newaxis, :], mem_steering[np.newaxis, :]])
+        predictions = self.model.predict([mem_frame[np.newaxis, :], mem_frame[np.newaxis, :]])
         # gear_predictions = self.gear_model.predict([mem_frame[np.newaxis, :], mem_steering[np.newaxis, :]])
         gear_predictions = np.array([[1]])
 
