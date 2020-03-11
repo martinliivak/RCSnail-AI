@@ -3,8 +3,7 @@ import datetime
 import numpy as np
 from commons.car_controls import CarControlUpdates
 
-from src.learning.models import create_mlp, create_cnn, create_multi_model, create_cnn_alone, \
-    create_cnn_alone_categorical
+from src.learning.models import create_cnn_alone, create_cnn_alone_categorical
 from src.learning.training.car_mapping import CarMapping
 from src.utilities.memory_maker import MemoryMaker
 
@@ -29,12 +28,13 @@ class ModelWrapper:
         self.__output_shape = output_shape
 
         # TODO split models to steering, throttle & gear models
-        if config.pretrained_start:
+        if config.pretrained_start or model_num is not None:
             model_name = 'model_n{}_m{}_{}.h5'.format(self.memory_length, self.memory_interval, model_num)
             #gear_model_name = 'gear_model_n{}_m{}_{}.h5'.format(self.memory_length, self.memory_interval, model_num)
 
             self.model = self.__load_model(model_name)
             #self.gear_model = self.__load_model(gear_model_name)
+            print("Loaded {}".format(model_name))
         else:
             self.model = self.__create_new_model()
             self.gear_model = self.__create_new_gear_model()
