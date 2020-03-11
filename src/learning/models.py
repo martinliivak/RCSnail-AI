@@ -89,13 +89,14 @@ def create_mlp_2(input_shape=(4,)):
     from tensorflow.keras.models import Model
 
     inputs = Input(shape=input_shape)
-    dropout_1 = Dropout(0.5)(inputs)
-    dense_1 = Dense(50, activation="relu", kernel_regularizer=l2(0.001))(dropout_1)
-    dropout_2 = Dropout(0.5)(dense_1)
+    # dropout_1 = Dropout(0.5)(inputs)
+    # dense_1 = Dense(50, activation="relu", kernel_regularizer=l2(0.001))(dropout_1)
+    dense_1 = Dense(50, activation="relu", kernel_regularizer=l2(0.001))(inputs)
+    dropout_2 = Dropout(0.8)(dense_1)
     dense_2 = Dense(25, activation="relu", kernel_regularizer=l2(0.001))(dropout_2)
-    dropout_3 = Dropout(0.5)(dense_2)
+    dropout_3 = Dropout(0.8)(dense_2)
     dense_3 = Dense(10, activation="relu", kernel_regularizer=l2(0.001))(dropout_3)
-    dropout_4 = Dropout(0.5)(dense_3)
+    dropout_4 = Dropout(0.8)(dense_3)
     return Model(inputs, dropout_4)
 
 
