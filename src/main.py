@@ -28,12 +28,16 @@ async def main_dagger(context: Context):
     data_queue = context.socket(zmq.SUB)
     controls_queue = context.socket(zmq.PUB)
 
+    control_mode = conf.control_mode
+    dagger_training_enabled = conf.dagger_training_enabled
+
     try:
         model = ModelWrapper(conf, output_shape=2)
         mem_slice_frames = []
         mem_slice_numerics = []
         data_count = 0
         dagger_iteration = 0
+        session_expert = []
 
         await initialize_subscriber(data_queue, conf.data_queue_port)
         await initialize_publisher(controls_queue, conf.controls_queue_port)
@@ -57,38 +61,41 @@ async def main_dagger(context: Context):
                 controls_queue.send_json(expert_action)
                 continue
 
+            session_expert.append(mem_expert_action)
             data_count += recorder.record_session(mem_frame, mem_telemetry, mem_expert_action)
-            if conf.dagger_training_enabled and data_count % 1000 == 0:
+
+            if dagger_training_enabled and data_count % 1000 == 0:
                 recorder.store_session_batch(1000)
 
-            if conf.dagger_training_enabled and data_count % conf.dagger_epoch_size == 0 and dagger_iteration < conf.dagger_epochs_count:
+            if dagger_training_enabled and data_count % conf.dagger_epoch_size == 0 and dagger_iteration < conf.dagger_epochs_count:
                 await fit_model_with_generator(model, conf)
                 dagger_iteration += 1
+                # TODO min L2 error model select here, based on inference compared to session_expert data
+                # np.array(session_expert)
 
             try:
-                if conf.control_mode == 'full_model':
-                    prediction = model.predict(mem_frame, mem_telemetry).to_dict()
-                    prediction['d_gear'] = mem_expert_action[0]
+                if control_mode == 'full_model':
+                    next_controls = model.predict(mem_frame, mem_telemetry).to_dict()
+                    next_controls['d_gear'] = mem_expert_action[0]
                     #prediction['d_throttle'] = mem_expert_action[2]
-                elif conf.control_mode == 'full_expert':
-                    prediction = expert_action.copy()
-                    prediction['p_steering'] = model.predict(mem_frame, mem_telemetry).to_dict()['d_steering']
-                elif conf.control_mode == 'shared':
+                elif control_mode == 'full_expert':
+                    next_controls = expert_action.copy()
+                    time.sleep(0.035)
+                elif control_mode == 'shared':
                     expert_probability = np.exp(-0.05 * dagger_iteration)
                     model_probability = np.random.random()
+                    model_action = model.predict(mem_frame, mem_telemetry).to_dict()
 
                     if expert_probability > model_probability:
-                        prediction = expert_action
+                        next_controls = expert_action
                     else:
-                        prediction = model.predict(mem_frame, mem_telemetry).to_dict()
-                        prediction['d_gear'] = mem_expert_action[0]
-                        #prediction['d_throttle'] = mem_expert_action[2]
+                        next_controls = model_action
+                        next_controls['d_gear'] = mem_expert_action[0]
                 else:
                     raise ValueError('Misconfigured control mode!')
 
-                prediction['p_end'] = int(datetime.now().timestamp() * 1000)
-                recorder.record_full(frame, telemetry, expert_action, prediction)
-                controls_queue.send_json(prediction)
+                recorder.record_full(frame, telemetry, expert_action, next_controls)
+                controls_queue.send_json(next_controls)
             except Exception as ex:
                 print("Predicting exception: {}".format(ex))
                 traceback.print_tb(ex.__traceback__)
@@ -114,7 +121,7 @@ async def main_dagger(context: Context):
 async def fit_model_with_generator(model, conf):
     logging.info("Fitting with generator")
     try:
-        generator = Generator(conf, memory_tuple=(conf.m_length, conf.m_interval), batch_size=32, column_mode='steer')
+        generator = Generator(conf, batch_size=32, column_mode='steer')
         model.fit(generator)
         logging.info("Fitting done")
     except Exception as ex:

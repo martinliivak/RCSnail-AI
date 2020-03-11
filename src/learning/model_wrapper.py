@@ -82,13 +82,15 @@ class ModelWrapper:
         # gear_predictions = self.gear_model.predict([mem_frame[np.newaxis, :], mem_steering[np.newaxis, :]])
         gear_predictions = np.array([[1]])
 
-        return self.updates_from_prediction(predictions, gear_predictions)
+        return updates_from_prediction(predictions, gear_predictions)
 
-    def updates_from_prediction(self, prediction, gear_prediction):
-        prediction_values = prediction.tolist()[0]
-        gear_prediction_values = gear_prediction.tolist()[0]
 
-        return CarControlUpdates(gear_prediction_values[0], prediction_values[0], prediction_values[1], 0.0)
+def updates_from_prediction(prediction, gear_prediction):
+    prediction_values = prediction.tolist()[0]
+    gear_prediction_values = gear_prediction.tolist()[0]
+
+    return CarControlUpdates(gear_prediction_values[0], prediction_values[0], prediction_values[1], 0.0)
+
 
 def get_model_file_name(path_to_models: str):
     date = datetime.datetime.today().strftime("%Y_%m_%d")
