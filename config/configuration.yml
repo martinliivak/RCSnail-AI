@@ -21,6 +21,6 @@ pretrained_start: false  # should load model from file or nah
 model_num: 8
 
 # Imitation learning
-dagger_training_enabled: true
+dagger_training_enabled: false
 dagger_epoch_size: 2000
 dagger_epochs_count: 16

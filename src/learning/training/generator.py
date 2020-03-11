@@ -9,14 +9,13 @@ class GenFiles:
     frame = 'frame_{}_{:07}.npy'
     numeric = 'numeric_{}_{:07}.npy'
     diff = 'diff_{}_{:07}.npy'
-    dad_numeric = 'numeric_dad_{}_{:07}.npy'
 
     steer_sampling = 'steer_sample_{}.npy'
     gear_sampling = 'gear_sample_{}.npy'
 
 
 class Generator:
-    def __init__(self, config, memory_tuple=None, base_path=None, batch_size=32, column_mode='all', test_size=0.15):
+    def __init__(self, config, memory_tuple=None, base_path=None, batch_size=32, column_mode='all', test_size=0.2):
         if memory_tuple is not None:
             self.__memory = MemoryMaker(config, memory_tuple)
             self.memory_string = 'n{}_m{}'.format(*memory_tuple)
@@ -41,7 +40,7 @@ class Generator:
         self.test_batch_count = len(self.test_indexes) // self.batch_size
 
     def __apply_upsampling(self):
-        indexes = np.arange(self.count_instances())
+        indexes = np.arange(self.__count_instances())
         if self.session_mode:
             return indexes
 
@@ -58,14 +57,11 @@ class Generator:
 
         return np.repeat(indexes, sampling_multipliers)
 
-    def count_instances(self):
+    def __count_instances(self):
         return len([fn for fn in os.listdir(self.path) if fn.startswith('frame_')])
 
-    def count_num_instances(self):
-        return len([fn for fn in os.listdir(self.path) if fn.startswith('numeric_')])
-
     def get_shapes(self):
-        frame, numeric, diff = self.load_single_pair(0)
+        frame, numeric, diff = self.__load_single_pair(0)
 
         if not hasattr(diff, '__len__'):
             return frame.shape, numeric.shape, 1
@@ -125,7 +121,7 @@ class Generator:
             np.random.shuffle(indexes)
 
             for index in indexes:
-                x_frame, x_numeric, y = self.load_single_pair(index)
+                x_frame, x_numeric, y = self.__load_single_pair(index)
                 yield x_frame, y
 
     def generate_single_train_with_numeric(self, shuffle=True):
@@ -135,7 +131,7 @@ class Generator:
                 np.random.shuffle(indexes)
 
             for index in indexes:
-                x_frame, x_numeric, y = self.load_single_pair(index)
+                x_frame, x_numeric, y = self.__load_single_pair(index)
                 yield x_frame, x_numeric, y
 
     def generate_single_test(self):
@@ -144,7 +140,7 @@ class Generator:
             np.random.shuffle(indexes)
 
             for index in indexes:
-                x_frame, x_numeric, y = self.load_single_pair(index)
+                x_frame, x_numeric, y = self.__load_single_pair(index)
                 yield x_frame, y
 
     def generate_single_test_with_numeric(self, shuffle=True):
@@ -154,7 +150,7 @@ class Generator:
                 np.random.shuffle(indexes)
 
             for index in indexes:
-                x_frame, x_numeric, y = self.load_single_pair(index)
+                x_frame, x_numeric, y = self.__load_single_pair(index)
                 yield x_frame, x_numeric, y
 
     def __load_batch(self, batch_indexes):
@@ -163,7 +159,7 @@ class Generator:
         diffs = []
 
         for i in batch_indexes:
-            frame, numeric, diff = self.load_single_pair(i)
+            frame, numeric, diff = self.__load_single_pair(i)
 
             frames.append(frame)
             numerics.append(numeric)
@@ -171,7 +167,7 @@ class Generator:
 
         return np.array(frames), np.array(numerics), np.array(diffs)
 
-    def load_single_pair(self, index):
+    def __load_single_pair(self, index):
         frame = np.load(self.path + GenFiles.frame.format(self.memory_string, index), allow_pickle=True)
         numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, index), allow_pickle=True)
         diff = np.load(self.path + GenFiles.diff.format(self.memory_string, index), allow_pickle=True)
