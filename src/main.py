@@ -66,7 +66,9 @@ async def main_dagger(context: Context):
                 if dagger_iteration < conf.dagger_epochs_count:
                     await fit_model_with_generator(model, conf)
                     dagger_iteration += 1
-
+                    logging.info('Dagger iter {}'.format(dagger_iteration))
+                else:
+                    dagger_iteration = 50
             try:
                 if control_mode == 'full_model':
                     next_controls = model.predict(mem_frame, mem_telemetry).to_dict()
@@ -76,7 +78,7 @@ async def main_dagger(context: Context):
                     next_controls = expert_action.copy()
                     time.sleep(0.035)
                 elif control_mode == 'shared':
-                    expert_probability = np.exp(-0.05 * dagger_iteration)
+                    expert_probability = np.exp(-0.02 * dagger_iteration)
                     model_probability = np.random.random()
                     model_action = model.predict(mem_frame, mem_telemetry).to_dict()
 
@@ -117,7 +119,7 @@ async def fit_model_with_generator(model, conf):
     try:
         # might need to use different generate method
         generator = Generator(conf, batch_size=32, column_mode='steer')
-        model.fit(generator, generator.generate, fresh_model=True)
+        model.fit(generator, generator.generate, epochs=4, fresh_model=False)
         model.evaluate_model(generator)
 
         logging.info("Fitting done")

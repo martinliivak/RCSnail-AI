@@ -10,7 +10,7 @@ from src.utilities.memory_maker import MemoryMaker
 
 
 class ModelWrapper:
-    def __init__(self, config, numeric_shape=(4,), output_shape=1, memory_tuple=None, model_num=None, should_load=False):
+    def __init__(self, config, numeric_shape=(4,), output_shape=1, memory_tuple=None, model_num=None):
         if memory_tuple is not None:
             self.memory_length, self.memory_interval = memory_tuple
         else:
@@ -29,13 +29,17 @@ class ModelWrapper:
         self.__output_shape = output_shape
 
         # TODO split models to steering, throttle & gear models
-        if config.pretrained_start or should_load:
+        if config.model_start_mode == 'regular':
             model_name = 'model_n{}_m{}_{}.h5'.format(self.memory_length, self.memory_interval, model_num)
             #gear_model_name = 'gear_model_n{}_m{}_{}.h5'.format(self.memory_length, self.memory_interval, model_num)
 
-            self.model = self.__load_model(model_name)
+            self.model = self.__load_model(self.__path_to_models, model_name)
             #self.gear_model = self.__load_model(gear_model_name)
             print("Loaded {}".format(model_name))
+        elif config.model_start_mode == 'dagger':
+            # TODO programmatic load name
+            self.model = self.__load_model(self.__path_to_dagger_models, 'model_n1_m1_6.h5')
+            print("Loaded {}".format('dagger model'))
         else:
             self.model = self.__create_new_model()
             self.gear_model = self.__create_new_gear_model()
@@ -52,16 +56,16 @@ class ModelWrapper:
     def __create_new_gear_model(self):
         return create_cnn_alone_categorical(input_shape=self.__frames_shape, output_shape=1)
 
-    def __load_model(self, model_filename: str):
+    def __load_model(self, path_to_models, model_filename: str):
         from tensorflow.keras.models import load_model
 
-        if os.path.isfile(self.__path_to_models + model_filename):
-            return load_model(self.__path_to_models + model_filename)
+        if os.path.isfile(path_to_models + model_filename):
+            return load_model(path_to_models + model_filename)
         else:
             raise ValueError('Model {} not found!'.format(model_filename))
 
     def save_best_model(self):
-        model_filename = 'best_' + get_model_file_name(self.__path_to_dagger_models)
+        model_filename = get_model_file_name(self.__path_to_dagger_models)
         self.min_err_model.save(self.__path_to_dagger_models + model_filename + ".h5")
         print("Model has been saved to {} as {}.h5".format(self.__path_to_dagger_models, model_filename))
 
@@ -114,7 +118,19 @@ def updates_from_prediction(prediction, gear_prediction):
 
 
 def get_model_file_name(path_to_models: str):
-    date = datetime.datetime.today().strftime("%Y_%m_%d")
-    models_from_same_date = list(filter(lambda file: date in file, os.listdir(path_to_models)))
+    model_num = get_last_model_num(path_to_models, 'dagger_')
 
-    return date + "_dagger_" + str(int(len(models_from_same_date) + 1))
+    return 'dagger_num_{}'.format(model_num + 1)
+
+
+def get_last_model_num(path_to_models, model_prefix):
+    model_files = [fn for fn in os.listdir(path_to_models) if fn.startswith(model_prefix) and fn.endswith('.h5')]
+
+    if len(model_files) == 0:
+        return 1
+
+    # expected format is "dagger_num_3.h5"
+    existing_nums = [int(fn.split('_')[2].split('.')[0]) for fn in model_files]
+
+    latest_num = sorted(existing_nums)[-1]
+    return int(latest_num)
