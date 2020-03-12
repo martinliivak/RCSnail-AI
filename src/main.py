@@ -30,6 +30,7 @@ async def main_dagger(context: Context):
 
     control_mode = conf.control_mode
     dagger_training_enabled = conf.dagger_training_enabled
+    dagger_epoch_size = conf.dagger_epoch_size
 
     try:
         model = ModelWrapper(conf, output_shape=2)
@@ -37,7 +38,6 @@ async def main_dagger(context: Context):
         mem_slice_numerics = []
         data_count = 0
         dagger_iteration = 0
-        session_expert = []
 
         await initialize_subscriber(data_queue, conf.data_queue_port)
         await initialize_publisher(controls_queue, conf.controls_queue_port)
@@ -47,12 +47,10 @@ async def main_dagger(context: Context):
             # TODO handle case if expert data is not available, i.e full model control
             telemetry, expert_action = data
             if frame is None or telemetry is None or expert_action is None:
-                print("None datas")
+                logging.info("None data")
                 continue
 
-            telemetry['p_start'] = int(datetime.now().timestamp() * 1000)
             #recorder.record_with_expert(frame, telemetry, expert_action)
-
             mem_frame = transformer.session_frame_wide(frame, mem_slice_frames)
             mem_telemetry = transformer.session_numeric_input(telemetry, mem_slice_numerics)
             mem_expert_action = transformer.session_expert_action(expert_action)
@@ -61,17 +59,13 @@ async def main_dagger(context: Context):
                 controls_queue.send_json(expert_action)
                 continue
 
-            session_expert.append(mem_expert_action)
             data_count += recorder.record_session(mem_frame, mem_telemetry, mem_expert_action)
+            if dagger_training_enabled and data_count % dagger_epoch_size == 0:
+                recorder.store_session_batch(dagger_epoch_size)
 
-            if dagger_training_enabled and data_count % 1000 == 0:
-                recorder.store_session_batch(1000)
-
-            if dagger_training_enabled and data_count % conf.dagger_epoch_size == 0 and dagger_iteration < conf.dagger_epochs_count:
-                await fit_model_with_generator(model, conf)
-                dagger_iteration += 1
-                # TODO min L2 error model select here, based on inference compared to session_expert data
-                # np.array(session_expert)
+                if dagger_iteration < conf.dagger_epochs_count:
+                    await fit_model_with_generator(model, conf)
+                    dagger_iteration += 1
 
             try:
                 if control_mode == 'full_model':
@@ -111,18 +105,21 @@ async def main_dagger(context: Context):
             os.remove(f)
         logging.info("Session partials deleted successfully.")
 
-        model.save_model()
-
         if recorder is not None:
             #recorder.save_session_with_expert()
             recorder.save_session_with_predictions()
+
+        model.save_best_model()
 
 
 async def fit_model_with_generator(model, conf):
     logging.info("Fitting with generator")
     try:
+        # might need to use different generate method
         generator = Generator(conf, batch_size=32, column_mode='steer')
-        model.fit(generator)
+        model.fit(generator, generator.generate, fresh_model=True)
+        model.evaluate_model(generator)
+
         logging.info("Fitting done")
     except Exception as ex:
         print("Fitting exception: {}".format(ex))

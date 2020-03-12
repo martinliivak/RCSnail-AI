@@ -61,7 +61,7 @@ class Generator:
         return len([fn for fn in os.listdir(self.path) if fn.startswith('frame_')])
 
     def get_shapes(self):
-        frame, numeric, diff = self.__load_single_pair(0)
+        frame, numeric, diff = self.load_single_pair(0)
 
         if not hasattr(diff, '__len__'):
             return frame.shape, numeric.shape, 1
@@ -115,13 +115,14 @@ class Generator:
             raise ValueError('Data type is not train or test!')
         return batch_count, indexes
 
-    def generate_single_train(self):
+    def generate_single_train(self, shuffle=True):
         batch_count, indexes = self.__evaluate_indexes('train')
         while True:
-            np.random.shuffle(indexes)
+            if shuffle:
+                np.random.shuffle(indexes)
 
             for index in indexes:
-                x_frame, x_numeric, y = self.__load_single_pair(index)
+                x_frame, x_numeric, y = self.load_single_pair(index)
                 yield x_frame, y
 
     def generate_single_train_with_numeric(self, shuffle=True):
@@ -131,16 +132,17 @@ class Generator:
                 np.random.shuffle(indexes)
 
             for index in indexes:
-                x_frame, x_numeric, y = self.__load_single_pair(index)
+                x_frame, x_numeric, y = self.load_single_pair(index)
                 yield x_frame, x_numeric, y
 
-    def generate_single_test(self):
+    def generate_single_test(self, shuffle=True):
         batch_count, indexes = self.__evaluate_indexes('test')
         while True:
-            np.random.shuffle(indexes)
+            if shuffle:
+                np.random.shuffle(indexes)
 
             for index in indexes:
-                x_frame, x_numeric, y = self.__load_single_pair(index)
+                x_frame, x_numeric, y = self.load_single_pair(index)
                 yield x_frame, y
 
     def generate_single_test_with_numeric(self, shuffle=True):
@@ -150,7 +152,7 @@ class Generator:
                 np.random.shuffle(indexes)
 
             for index in indexes:
-                x_frame, x_numeric, y = self.__load_single_pair(index)
+                x_frame, x_numeric, y = self.load_single_pair(index)
                 yield x_frame, x_numeric, y
 
     def __load_batch(self, batch_indexes):
@@ -159,7 +161,7 @@ class Generator:
         diffs = []
 
         for i in batch_indexes:
-            frame, numeric, diff = self.__load_single_pair(i)
+            frame, numeric, diff = self.load_single_pair(i)
 
             frames.append(frame)
             numerics.append(numeric)
@@ -167,7 +169,7 @@ class Generator:
 
         return np.array(frames), np.array(numerics), np.array(diffs)
 
-    def __load_single_pair(self, index):
+    def load_single_pair(self, index):
         frame = np.load(self.path + GenFiles.frame.format(self.memory_string, index), allow_pickle=True)
         numeric = np.load(self.path + GenFiles.numeric.format(self.memory_string, index), allow_pickle=True)
         diff = np.load(self.path + GenFiles.diff.format(self.memory_string, index), allow_pickle=True)
