@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 from commons.car_controls import CarControlUpdates
 
-from src.learning.models import create_cnn_alone, create_cnn_alone_categorical
+from src.learning.models import create_standalone_nvidia_cnn
 from src.learning.training.car_mapping import CarMapping
 from src.utilities.memory_maker import MemoryMaker
 
@@ -51,10 +51,10 @@ class ModelWrapper:
         self.__mapping = CarMapping()
 
     def __create_new_model(self):
-        return create_cnn_alone(input_shape=self.__frames_shape, output_shape=self.__output_shape)
+        return create_standalone_nvidia_cnn(activation='linear', input_shape=self.__frames_shape, output_shape=self.__output_shape)
 
     def __create_new_gear_model(self):
-        return create_cnn_alone_categorical(input_shape=self.__frames_shape, output_shape=1)
+        return create_standalone_nvidia_cnn(activation='softmax', input_shape=self.__frames_shape, output_shape=1)
 
     def __load_model(self, path_to_models, model_filename: str):
         from tensorflow.keras.models import load_model
