@@ -12,10 +12,10 @@ from src.utilities.memory_maker import MemoryMaker
 class ModelWrapper:
     def __init__(self, config, numeric_shape=(4,), output_shape=1, memory_tuple=None, model_num=None):
         if memory_tuple is not None:
-            self.memory_length, self.memory_interval = memory_tuple
+            memory_length, memory_interval = memory_tuple
         else:
-            self.memory_length = config.m_length
-            self.memory_interval = config.m_interval
+            memory_length = config.m_length
+            memory_interval = config.m_interval
 
         if model_num is None:
             model_num = config.model_num
@@ -24,21 +24,20 @@ class ModelWrapper:
         self.__path_to_dagger_models = config.path_to_dagger_models
         self.__memory = MemoryMaker(config, memory_tuple=memory_tuple)
 
-        self.__frames_shape = (config.frame_height, config.frame_width, 3 * self.memory_length)
-        self.__numeric_shape = (1 * self.memory_length,)
+        self.__frames_shape = (config.frame_height, config.frame_width, 3 * memory_length)
+        self.__numeric_shape = (1 * memory_length,)
         self.__output_shape = output_shape
 
         # TODO split models to steering, throttle & gear models
+        model_name = 'model_n{}_m{}_{}.h5'.format(memory_length, memory_interval, model_num)
         if config.model_start_mode == 'regular':
-            model_name = 'model_n{}_m{}_{}.h5'.format(self.memory_length, self.memory_interval, model_num)
             #gear_model_name = 'gear_model_n{}_m{}_{}.h5'.format(self.memory_length, self.memory_interval, model_num)
 
             self.model = self.__load_model(self.__path_to_models, model_name)
             #self.gear_model = self.__load_model(gear_model_name)
             print("Loaded {}".format(model_name))
         elif config.model_start_mode == 'dagger':
-            # TODO programmatic load name
-            self.model = self.__load_model(self.__path_to_dagger_models, 'model_n1_m1_6.h5')
+            self.model = self.__load_model(self.__path_to_dagger_models, model_name)
             print("Loaded {}".format('dagger model'))
         else:
             self.model = self.__create_new_model()
@@ -79,7 +78,7 @@ class ModelWrapper:
                            validation_data=generate_method(data='test'),
                            validation_steps=generator.test_batch_count,
                            epochs=epochs, verbose=verbose)
-            # TODO fit gear model
+            # TODO fit gear etc. models
         except Exception as ex:
             print("Generator training exception: {}".format(ex))
 
