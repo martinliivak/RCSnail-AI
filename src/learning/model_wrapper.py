@@ -17,8 +17,10 @@ class ModelWrapper:
             memory_length = config.m_length
             memory_interval = config.m_interval
 
-        if model_num is None:
-            model_num = config.model_num
+        if model_num is not None:
+            model_name = 'model_n{}_m{}_{}.h5'.format(memory_length, memory_interval, model_num)
+        else:
+            model_name = config.model_name
 
         self.__path_to_models = config.path_to_models
         self.__path_to_dagger_models = config.path_to_dagger_models
@@ -29,7 +31,7 @@ class ModelWrapper:
         self.__output_shape = output_shape
 
         # TODO split models to steering, throttle & gear models
-        model_name = 'model_n{}_m{}_{}.h5'.format(memory_length, memory_interval, model_num)
+
         if config.model_start_mode == 'regular':
             #gear_model_name = 'gear_model_n{}_m{}_{}.h5'.format(self.memory_length, self.memory_interval, model_num)
 
@@ -106,7 +108,7 @@ class ModelWrapper:
         if self.min_error is None or mse < self.min_error:
             self.min_error = mse
             self.min_err_model.set_weights(self.model.get_weights())
-        print(mse)
+        print("Dagger MSE: {}".format(mse))
 
 
 def updates_from_prediction(prediction, gear_prediction):

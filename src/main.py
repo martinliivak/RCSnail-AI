@@ -60,7 +60,7 @@ async def main_dagger(context: Context):
                 continue
 
             data_count += recorder.record_session(mem_frame, mem_telemetry, mem_expert_action)
-            if dagger_training_enabled and data_count % dagger_epoch_size == 0:
+            if control_mode == 'shared' and dagger_training_enabled and data_count % dagger_epoch_size == 0:
                 recorder.store_session_batch(dagger_epoch_size)
 
                 if dagger_iteration < conf.dagger_epochs_count:

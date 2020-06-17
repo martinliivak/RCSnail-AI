@@ -79,7 +79,6 @@ class Recorder:
         del self.session_telemetry[:batch_count]
         del self.session_expert_actions[:batch_count]
 
-        # TODO should do sampling on batches?
         for i in range(0, np_frames.shape[0]):
             np.save(self.session_path + GenFiles.frame.format(memory_string, i + stored_count), np_frames[i])
             np.save(self.session_path + GenFiles.numeric.format(memory_string, i + stored_count), np_numerics[i])
