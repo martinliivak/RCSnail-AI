@@ -115,7 +115,7 @@ def updates_from_prediction(prediction, gear_prediction):
     prediction_values = prediction.tolist()[0]
     gear_prediction_values = gear_prediction.tolist()[0]
 
-    return CarControlUpdates(gear_prediction_values[0], prediction_values[0], prediction_values[1], 0.0)
+    return CarControlUpdates(gear_prediction_values[0], prediction_values[0], prediction_values[1], 0.0, False)
 
 
 def get_model_file_name(path_to_models: str):

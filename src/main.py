@@ -70,13 +70,13 @@ async def main_dagger(context: Context):
                 else:
                     dagger_iteration = 50
             try:
-                if control_mode == 'full_model':
+                if control_mode == 'full_expert' or expert_action['manual_override']:
+                    next_controls = expert_action.copy()
+                    time.sleep(0.035)
+                elif control_mode == 'full_model':
                     next_controls = model.predict(mem_frame, mem_telemetry).to_dict()
                     next_controls['d_gear'] = mem_expert_action[0]
                     #prediction['d_throttle'] = mem_expert_action[2]
-                elif control_mode == 'full_expert':
-                    next_controls = expert_action.copy()
-                    time.sleep(0.035)
                 elif control_mode == 'shared':
                     expert_probability = np.exp(-0.02 * dagger_iteration)
                     model_probability = np.random.random()
