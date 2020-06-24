@@ -64,9 +64,15 @@ async def main_dagger(context: Context):
                 recorder.store_session_batch(dagger_epoch_size)
 
                 if dagger_iteration < conf.dagger_epochs_count:
+                    # send 0 throttle so the car won't go wild during fitting
+                    null_controls = expert_action.copy()
+                    null_controls['d_throttle'] = 0.0
+                    controls_queue.send_json(null_controls)
+
                     await fit_model_with_generator(model, conf)
                     dagger_iteration += 1
                     logging.info('Dagger iter {}'.format(dagger_iteration))
+                    continue
                 else:
                     dagger_iteration = 50
             try:
@@ -76,9 +82,10 @@ async def main_dagger(context: Context):
                 elif control_mode == 'full_model':
                     next_controls = model.predict(mem_frame, mem_telemetry).to_dict()
                     next_controls['d_gear'] = mem_expert_action[0]
-                    #prediction['d_throttle'] = mem_expert_action[2]
+                    #next_controls['d_throttle'] = mem_expert_action[2]
                 elif control_mode == 'shared':
-                    expert_probability = np.exp(-0.02 * dagger_iteration)
+                    #expert_probability = np.exp(-0.02 * dagger_iteration)
+                    expert_probability = np.exp(-0.06 * dagger_iteration)
                     model_probability = np.random.random()
                     model_action = model.predict(mem_frame, mem_telemetry).to_dict()
 
