@@ -84,8 +84,7 @@ async def main_dagger(context: Context):
                     next_controls['d_gear'] = mem_expert_action[0]
                     #next_controls['d_throttle'] = mem_expert_action[2]
                 elif control_mode == 'shared':
-                    #expert_probability = np.exp(-0.02 * dagger_iteration)
-                    expert_probability = np.exp(-0.06 * dagger_iteration)
+                    expert_probability = np.exp(-0.02 * dagger_iteration)
                     model_probability = np.random.random()
                     model_action = model.predict(mem_frame, mem_telemetry).to_dict()
 
