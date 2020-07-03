@@ -15,7 +15,8 @@ class GenFiles:
 
 
 class Generator:
-    def __init__(self, config, memory_tuple=None, base_path=None, batch_size=32, column_mode='all', test_size=0.2):
+    def __init__(self, config, memory_tuple=None, base_path=None, eval_mode=False, batch_size=32, column_mode='all', test_size=0.2):
+        # TODO the whole initialization is a bit of a mess now, should refactor
         if memory_tuple is not None:
             self.__memory = MemoryMaker(config, memory_tuple)
             self.memory_string = 'n{}_m{}'.format(*memory_tuple)
@@ -23,9 +24,12 @@ class Generator:
             self.__memory = MemoryMaker(config, (config.m_length, config.m_interval))
             self.memory_string = 'n{}_m{}'.format(config.m_length, config.m_interval)
 
-        self.session_mode = False
         if base_path is not None:
+            self.session_mode = False
             self.path = base_path + self.memory_string + '/'
+        elif eval_mode:
+            self.session_mode = True
+            self.path = base_path + self.memory_string + '_val/'
         else:
             self.session_mode = True
             self.path = config.path_to_session_files
@@ -42,6 +46,7 @@ class Generator:
     def __apply_upsampling(self):
         indexes = np.arange(self.__count_instances())
         if self.session_mode:
+            # dont use any sampling, just use everything
             return indexes
 
         if self.column_mode == 'steer':
@@ -91,18 +96,6 @@ class Generator:
                 x_frame, x_numeric, y = self.__load_batch(batch_indexes)
 
                 yield (x_frame, x_numeric), y
-
-    def generate_with_super_duper(self, data='train'):
-        batch_count, indexes = self.__evaluate_indexes(data)
-
-        while True:
-            np.random.shuffle(indexes)
-
-            for i in range(batch_count):
-                batch_indexes = indexes[i * self.batch_size:(i + 1) * self.batch_size]
-                x_frame, x_numeric, y = self.__load_batch(batch_indexes)
-
-                yield [x_frame, x_frame], y
 
     def __evaluate_indexes(self, data):
         if data == 'train':

@@ -97,7 +97,7 @@ class ModelWrapper:
     def evaluate_model(self, generator):
         true_actions = []
         pred_actions = []
-        for index in generator.test_indexes:
+        for index in generator.train_indexes:
             frame, telem, action = generator.load_single_pair(index)
             pred_action = self.model.predict([frame[np.newaxis, :], telem[np.newaxis, :]])[0]
 

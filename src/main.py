@@ -126,7 +126,9 @@ async def fit_model_with_generator(model, conf):
         # might need to use different generate method
         generator = Generator(conf, batch_size=32, column_mode='steer')
         model.fit(generator, generator.generate, epochs=4, fresh_model=False)
-        model.evaluate_model(generator)
+
+        eval_generator = Generator(conf, eval_mode=True, batch_size=32, column_mode='steer')
+        model.evaluate_model(eval_generator)
 
         logging.info("Fitting done")
     except Exception as ex:
