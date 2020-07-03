@@ -69,7 +69,7 @@ async def main_dagger(context: Context):
                     null_controls['d_throttle'] = 0.0
                     controls_queue.send_json(null_controls)
 
-                    await fit_model_with_generator(model, conf)
+                    await fit_and_eval_model(model, conf)
                     dagger_iteration += 1
                     logging.info('Dagger iter {}'.format(dagger_iteration))
                     continue
@@ -120,10 +120,9 @@ async def main_dagger(context: Context):
         model.save_best_model()
 
 
-async def fit_model_with_generator(model, conf):
+async def fit_and_eval_model(model, conf):
     logging.info("Fitting with generator")
     try:
-        # might need to use different generate method
         generator = Generator(conf, batch_size=32, column_mode='steer')
         model.fit(generator, generator.generate, epochs=4, fresh_model=False)
 

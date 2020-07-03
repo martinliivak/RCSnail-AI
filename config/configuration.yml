@@ -13,7 +13,7 @@ frame_height: 50
 frame_width: 180
 
 # Procedural flags
-control_mode: full_model  # modes: full_model, shared, full_expert
+control_mode: shared  # modes: full_model, shared, full_expert
 
 # Model wrapper
 model_start_mode: regular  # modes: regular, dagger, clean
