@@ -108,7 +108,6 @@ class ModelWrapper:
         if self.min_error is None or mse < self.min_error:
             self.min_error = mse
             self.min_err_model.set_weights(self.model.get_weights())
-        print("Dagger MSE: {}".format(mse))
 
 
 def updates_from_prediction(prediction, gear_prediction):

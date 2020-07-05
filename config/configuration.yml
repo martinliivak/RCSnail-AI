@@ -13,16 +13,16 @@ frame_height: 50
 frame_width: 180
 
 # Procedural flags
-control_mode: shared  # modes: full_model, shared, full_expert
+control_mode: shared # modes: full_model, shared, full_expert
 
 # Model wrapper
 model_start_mode: regular  # modes: regular, dagger, clean
-#model_name: model_n1_m1_15.h5
-model_name: dagger_epochs_7_size_500_exp-002.h5
+model_name: model_n1_m1_15.h5
+#model_name: dagger_epochs_15_size_1000_exp-002.h5
 m_length: 1 # memory length
 m_interval: 1 # memory interval
 
 # Imitation learning
 dagger_training_enabled: true
-dagger_epoch_size: 1000
-dagger_epochs_count: 5
+dagger_epoch_size: 100
+dagger_epochs_count: 15

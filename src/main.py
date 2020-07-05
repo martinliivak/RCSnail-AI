@@ -126,9 +126,11 @@ async def fit_and_eval_model(model, conf):
         generator = Generator(conf, batch_size=32, column_mode='steer')
         model.fit(generator, generator.generate, epochs=4, fresh_model=False)
 
+        logging.info("Model evaluation")
         eval_generator = Generator(conf, eval_mode=True, batch_size=32, column_mode='steer')
         model.evaluate_model(eval_generator)
 
+        logging.info("Best DAgger MSE: {}".format(model.min_error))
         logging.info("Fitting done")
     except Exception as ex:
         print("Fitting exception: {}".format(ex))

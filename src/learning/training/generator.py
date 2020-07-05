@@ -29,7 +29,7 @@ class Generator:
             self.path = base_path + self.memory_string + '/'
         elif eval_mode:
             self.session_mode = True
-            self.path = base_path + self.memory_string + '_val/'
+            self.path = config.path_to_training + self.memory_string + '_val/'
         else:
             self.session_mode = True
             self.path = config.path_to_session_files
