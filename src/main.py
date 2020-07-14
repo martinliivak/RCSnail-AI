@@ -89,7 +89,10 @@ async def main_dagger(context: Context):
                     model_action = model.predict(mem_frame, mem_telemetry).to_dict()
 
                     if expert_probability > model_probability:
-                        next_controls = expert_action
+                        next_controls = model_action
+                        next_controls['d_gear'] = mem_expert_action[0]
+                        next_controls['d_steering'] = mem_expert_action[1]
+                        next_controls['d_throttle'] = mem_expert_action[2]
                     else:
                         next_controls = model_action
                         next_controls['d_gear'] = mem_expert_action[0]
@@ -124,7 +127,7 @@ async def fit_and_eval_model(model, conf):
     logging.info("Fitting with generator")
     try:
         generator = Generator(conf, batch_size=32, column_mode='steer')
-        model.fit(generator, generator.generate, epochs=4, fresh_model=False)
+        model.fit(generator, generator.generate, epochs=4, verbose=0, fresh_model=False)
 
         logging.info("Model evaluation")
         eval_generator = Generator(conf, eval_mode=True, batch_size=32, column_mode='steer')
