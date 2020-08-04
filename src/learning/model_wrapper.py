@@ -10,7 +10,7 @@ from src.utilities.memory_maker import MemoryMaker
 
 
 class ModelWrapper:
-    def __init__(self, config, numeric_shape=(4,), output_shape=1, memory_tuple=None, model_num=None):
+    def __init__(self, config, numeric_shape=(4,), output_shape=1, memory_tuple=None, model_num=None, model_name=None):
         if memory_tuple is not None:
             memory_length, memory_interval = memory_tuple
         else:
@@ -18,9 +18,11 @@ class ModelWrapper:
             memory_interval = config.m_interval
 
         if model_num is not None:
-            model_name = 'model_n{}_m{}_{}.h5'.format(memory_length, memory_interval, model_num)
+            load_model_name = 'model_n{}_m{}_{}.h5'.format(memory_length, memory_interval, model_num)
+        elif model_name is not None:
+            load_model_name = model_name
         else:
-            model_name = config.model_name
+            load_model_name = config.model_name
 
         self.__path_to_models = config.path_to_models
         self.__path_to_dagger_models = config.path_to_dagger_models
@@ -35,11 +37,11 @@ class ModelWrapper:
         if config.model_start_mode == 'regular':
             #gear_model_name = 'gear_model_n{}_m{}_{}.h5'.format(self.memory_length, self.memory_interval, model_num)
 
-            self.model = self.__load_model(self.__path_to_models, model_name)
+            self.model = self.__load_model(self.__path_to_models, load_model_name)
             #self.gear_model = self.__load_model(gear_model_name)
-            print("Loaded {}".format(model_name))
+            print("Loaded {}".format(load_model_name))
         elif config.model_start_mode == 'dagger':
-            self.model = self.__load_model(self.__path_to_dagger_models, model_name)
+            self.model = self.__load_model(self.__path_to_dagger_models, load_model_name)
             print("Loaded {}".format('dagger model'))
         else:
             self.model = self.__create_new_model()

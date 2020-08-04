@@ -17,9 +17,9 @@ control_mode: full_model # modes: full_model, shared, full_expert
 
 # Model wrapper
 model_start_mode: regular  # modes: regular, dagger, clean
-#model_name: model_n1_m1_17.h5
+model_name: model_n1_m1_17.h5
 #model_name: dagger_epochs_12_size_1600_exp-002.h5
-model_name: model_n1_m1_17_dagger_epochs_12_size_1600_exp-002.h5
+#model_name: model_n1_m1_17_dagger_epochs_12_size_1600_exp-002.h5
 m_length: 1 # memory length
 m_interval: 1 # memory interval
 
