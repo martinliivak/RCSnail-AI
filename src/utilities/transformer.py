@@ -22,6 +22,8 @@ class Transformer:
         return resized_frames
 
     def session_frame_wide(self, frame, memory_list):
+        # test filming
+        #resized = np.array(Image.fromarray(frame.astype(np.uint8)).resize(self.resolution), dtype=np.float32)
         resized = frame[(frame.shape[0] - self.resolution[1]):, :, :].astype(np.float32)
         resized /= 255
         return self.__memory.memory_creator(resized, memory_list, axis=2)

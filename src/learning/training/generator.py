@@ -15,7 +15,7 @@ class GenFiles:
 
 
 class Generator:
-    def __init__(self, config, memory_tuple=None, base_path=None, eval_mode=False, batch_size=32, column_mode='all', test_size=0.2):
+    def __init__(self, config, memory_tuple=None, base_path=None, eval_mode=False, batch_size=32, column_mode='all', test_size=0.2, index_override=None):
         # TODO the whole initialization is a bit of a mess now, should refactor
         if memory_tuple is not None:
             self.__memory = MemoryMaker(config, memory_tuple)
@@ -37,7 +37,10 @@ class Generator:
         self.batch_size = batch_size
         self.column_mode = column_mode
 
-        indexes = self.__apply_upsampling()
+        if index_override is not None:
+            indexes = index_override
+        else:
+            indexes = self.__apply_upsampling()
         self.train_indexes, self.test_indexes = train_test_split(indexes, test_size=test_size, shuffle=True)
 
         self.train_batch_count = len(self.train_indexes) // self.batch_size

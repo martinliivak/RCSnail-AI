@@ -127,7 +127,7 @@ async def fit_and_eval_model(model, conf):
     logging.info("Fitting with generator")
     try:
         generator = Generator(conf, batch_size=32, column_mode='steer')
-        model.fit(generator, generator.generate, epochs=4, verbose=0, fresh_model=False)
+        model.fit(generator, generator.generate, epochs=8, verbose=0, fresh_model=False)
 
         logging.info("Model evaluation")
         eval_generator = Generator(conf, eval_mode=True, batch_size=32, column_mode='steer')

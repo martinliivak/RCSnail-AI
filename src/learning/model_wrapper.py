@@ -69,7 +69,7 @@ class ModelWrapper:
 
     def save_best_model(self):
         model_filename = get_model_file_name(self.__path_to_dagger_models)
-        self.min_err_model.save(self.__path_to_dagger_models + model_filename + ".h5")
+        self.min_err_model.save(self.__path_to_dagger_models + model_filename + '.h5')
         print("Model has been saved to {} as {}.h5".format(self.__path_to_dagger_models, model_filename))
 
     def fit(self, generator, generate_method, epochs=1, verbose=1, fresh_model=False):
