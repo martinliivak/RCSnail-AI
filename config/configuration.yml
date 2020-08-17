@@ -5,21 +5,25 @@ controls_queue_port: 5552
 path_to_training: "../../training/"
 path_to_session_files: "../../training/session/"
 path_to_models: "../../training/models/"
+path_to_dagger_models: "../../training/dagger_models/"
 recording_height: 120
 recording_width: 180
 recording_fps: 20
 frame_height: 50
 frame_width: 180
+
 # Procedural flags
-control_mode: full_expert  # modes: full_model, shared, full_expert
+control_mode: full_model # modes: full_model, shared, full_expert
+
+# Model wrapper
+model_start_mode: regular  # modes: regular, dagger, clean
+model_name: model_n1_m1_17.h5
+#model_name: dagger_epochs_12_size_1600_exp-002.h5
+#model_name: model_n1_m1_17_dagger_epochs_12_size_1600_exp-002.h5
 m_length: 1 # memory length
 m_interval: 1 # memory interval
 
-# Model wrapper
-pretrained_start: true  # should load model from file or nah
-prediction_mode: steer  # modes: supervisor, steer, steer_diff
-model_num: 6
-
-dagger_training_enabled: false
-dagger_epoch_size: 3000
-dagger_epochs_count: 6
+# Imitation learning
+dagger_training_enabled: true
+dagger_epoch_size: 1600
+dagger_epochs_count: 12

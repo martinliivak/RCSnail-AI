@@ -79,7 +79,6 @@ class Recorder:
         del self.session_telemetry[:batch_count]
         del self.session_expert_actions[:batch_count]
 
-        # TODO should do sampling on batches?
         for i in range(0, np_frames.shape[0]):
             np.save(self.session_path + GenFiles.frame.format(memory_string, i + stored_count), np_frames[i])
             np.save(self.session_path + GenFiles.numeric.format(memory_string, i + stored_count), np_numerics[i])
@@ -132,10 +131,10 @@ class Recorder:
 
         df_telem = pd.DataFrame(self.telemetry)
         df_expert = pd.DataFrame(self.expert_actions)
-        df_predictions = pd.DataFrame(self.predictions)
-        df_predictions = df_predictions[['p_steering', 'p_end']]
+        # df_predictions = pd.DataFrame(self.predictions)
+        # df_predictions = df_predictions[['p_steering', 'p_end']]
 
-        df = pd.concat([df_telem, df_expert, df_predictions], axis=1)
+        df = pd.concat([df_telem, df_expert], axis=1)
         df.to_csv(self.storage_full_path + '.csv')
 
         logging.info("Telemetry, expert, and video saved successfully.")
